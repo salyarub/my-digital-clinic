@@ -1,0 +1,39 @@
+{
+  "common": {
+    "brandName": "عيادتك",
+    "loading": "جار التحميل...",
+    "error": "حدث خطأ ما",
+    "success": "تم بنجاح"
+  },
+  "login": {
+    "title": "تسجيل الدخول",
+    "subtitle": "أدخل بياناتك للوصول إلى حسابك",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "loginButton": "تسجيل الدخول",
+    "loggingIn": "جار تسجيل الدخول...",
+    "welcomeBack": "مرحباً بعودتك!",
+    "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+    "noActiveAccount": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+    "networkError": "خطأ في الاتصال. يرجى التحقق من اتصالك بالإنترنت.",
+    "accountInactive": "حسابك غير نشط. يرجى التواصل مع الدعم."
+  },
+  "doctor": {
+    "dashboard": "لوحة التحكم",
+    "schedule": "الجدول",
+    "conflictsDetected": "تم اكتشاف تعارض!",
+    "conflictsMsg": "لديك {{count}} حجوزات مؤكدة خلال فترة الإجازة.",
+    "autoProcess": "معالجة تلقائية وإعادة جدولة",
+    "cancelOnly": "إلغاء الحجوزات فقط",
+    "timeOff": "إجازة"
+  },
+  "patient": {
+    "rescheduleTitle": "إعادة جدولة موعدك",
+    "originalBooking": "الموعد الأصلي",
+    "cancelled": "ملغي",
+    "availableSlots": "المواعيد المتاحة",
+    "confirmSlot": "تأكيد هذا الموعد",
+    "successMsg": "تم إعادة جدولة الموعد بنجاح!",
+    "addToCalendar": "إضافة للتقويم"
+  }
+}

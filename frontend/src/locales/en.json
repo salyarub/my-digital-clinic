@@ -1,0 +1,39 @@
+{
+  "common": {
+    "brandName": "Ayadtuk",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "success": "Success"
+  },
+  "login": {
+    "title": "Login",
+    "subtitle": "Enter your credentials to access your account",
+    "email": "Email",
+    "password": "Password",
+    "loginButton": "Login",
+    "loggingIn": "Logging in...",
+    "welcomeBack": "Welcome back!",
+    "invalidCredentials": "Invalid email or password",
+    "noActiveAccount": "Invalid email or password",
+    "networkError": "Network error. Please check your connection.",
+    "accountInactive": "Your account is inactive. Please contact support."
+  },
+  "doctor": {
+    "dashboard": "Dashboard",
+    "schedule": "Schedule",
+    "conflictsDetected": "Conflicts Detected!",
+    "conflictsMsg": "You have {{count}} confirmed bookings during this time off.",
+    "autoProcess": "Auto Process & Reschedule",
+    "cancelOnly": "Cancel Bookings Only",
+    "timeOff": "Time Off"
+  },
+  "patient": {
+    "rescheduleTitle": "Reschedule Your Appointment",
+    "originalBooking": "Original Booking",
+    "cancelled": "Cancelled",
+    "availableSlots": "Available Slots",
+    "confirmSlot": "Confirm This Slot",
+    "successMsg": "Appointment Rescheduled Successfully!",
+    "addToCalendar": "Add to Calendar"
+  }
+}
