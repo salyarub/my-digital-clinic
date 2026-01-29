@@ -35,5 +35,63 @@
     "confirmSlot": "Confirm This Slot",
     "successMsg": "Appointment Rescheduled Successfully!",
     "addToCalendar": "Add to Calendar"
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "subtitle": "Manage system and users",
+    "refresh": "Refresh Data",
+    "tabs": {
+      "overview": "Overview",
+      "pending": "Doctor Requests",
+      "doctors": "Doctors"
+    },
+    "stats": {
+      "pending": "Pending Requests",
+      "pendingSubtitle": "doctors awaiting approval",
+      "verifiedDoctors": "Verified Doctors",
+      "totalPatients": "Total Patients",
+      "todayBookings": "Today's Bookings"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "reviewRequests": "Review Requests",
+      "manageDoctors": "Manage Doctors",
+      "reports": "Reports & Statistics"
+    },
+    "requests": {
+      "title": "Doctor Registration Requests",
+      "pendingCount": "{{count}} requests pending approval",
+      "needsReview": "Requests Need Review",
+      "viewAll": "View All Requests",
+      "noPending": "No pending requests",
+      "allReviewed": "All requests have been reviewed"
+    },
+    "table": {
+      "name": "Name",
+      "email": "Email",
+      "gender": "Gender",
+      "specialty": "Specialty",
+      "registrationDate": "Registration Date",
+      "license": "License",
+      "actions": "Actions",
+      "male": "Male",
+      "female": "Female",
+      "view": "View",
+      "noLicense": "N/A",
+      "licenseTitle": "Medical License"
+    },
+    "actions": {
+      "approve": "Approve",
+      "reject": "Reject",
+      "approved": "Doctor approved successfully",
+      "rejected": "Request rejected",
+      "failed": "Operation failed"
+    },
+    "doctors": {
+      "title": "All Doctors",
+      "subtitle": "Manage registered doctor accounts",
+      "comingSoon": "Coming Soon",
+      "comingSoonDesc": "Full doctor management will be added"
+    }
   }
 }

@@ -56,6 +56,10 @@ class Doctor(models.Model):
     latitude = models.DecimalField(max_digits=10, decimal_places=8, null=True, blank=True)
     longitude = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True)
     
+    # Verification & Personal Info
+    license_image = models.ImageField(upload_to='doctor_licenses/', blank=True, null=True)
+    gender = models.CharField(max_length=10, choices=[('M', 'Male'), ('F', 'Female')], default='M')
+    
     # Social Media Links
     facebook = models.URLField(blank=True, max_length=255)
     instagram = models.URLField(blank=True, max_length=255)

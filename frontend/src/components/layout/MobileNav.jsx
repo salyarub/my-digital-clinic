@@ -11,7 +11,8 @@ import {
     Users,
     Activity,
     User,
-    Search
+    Search,
+    Shield
 } from 'lucide-react'
 
 const MobileNav = () => {
@@ -29,9 +30,16 @@ const MobileNav = () => {
     const isDoctor = user?.role === 'DOCTOR'
     const isPatient = user?.role === 'PATIENT'
     const isSecretary = user?.role === 'SECRETARY'
+    const isAdmin = user?.role === 'ADMIN'
     const permissions = user?.permissions || []
 
     const getNavItems = () => {
+        // Admin navigation - exclusive to admin only
+        if (isAdmin) {
+            return [
+                { path: '/admin', icon: Shield, label: isRtl ? 'لوحة التحكم' : 'Dashboard' },
+            ]
+        }
         if (isDoctor) {
             return [
                 { path: '/doctor', icon: LayoutDashboard, label: isRtl ? 'الرئيسية' : 'Home' },

@@ -22,7 +22,8 @@ const LoginPage = () => {
     useEffect(() => {
         if (user) {
             const userRole = user.role
-            if (userRole === 'DOCTOR') navigate('/doctor')
+            if (userRole === 'ADMIN') navigate('/admin')
+            else if (userRole === 'DOCTOR') navigate('/doctor')
             else if (userRole === 'PATIENT') navigate('/patient')
             else if (userRole === 'SECRETARY') navigate('/secretary')
             else navigate('/')
@@ -71,7 +72,9 @@ const LoginPage = () => {
 
             // Role-based redirect
             const userRole = user.role
-            if (userRole === 'DOCTOR') {
+            if (userRole === 'ADMIN') {
+                navigate('/admin')
+            } else if (userRole === 'DOCTOR') {
                 navigate('/doctor')
             } else if (userRole === 'PATIENT') {
                 navigate('/patient')

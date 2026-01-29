@@ -44,10 +44,11 @@ const LandingPage = () => {
     useEffect(() => {
         if (user) {
             const userRole = user.role
-            if (userRole === 'DOCTOR') navigate('/doctor')
+            if (userRole === 'ADMIN') navigate('/admin')
+            else if (userRole === 'DOCTOR') navigate('/doctor')
             else if (userRole === 'PATIENT') navigate('/patient')
             else if (userRole === 'SECRETARY') navigate('/secretary')
-            else navigate('/')
+            // No else - if unknown role, stay on landing page
         }
     }, [user, navigate])
 

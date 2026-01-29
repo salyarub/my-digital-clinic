@@ -2,12 +2,14 @@ import React, { Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import Layout from '@/components/layout/Layout'
-import ProtectedRoute, { DoctorRoute, PatientRoute, SecretaryRoute } from '@/components/ProtectedRoute'
+import ProtectedRoute, { DoctorRoute, PatientRoute, SecretaryRoute, AdminRoute } from '@/components/ProtectedRoute'
 
+// Code Splitting - Public Pages
 // Code Splitting - Public Pages
 const LandingPage = React.lazy(() => import('@/pages/LandingPage'))
 const LoginPage = React.lazy(() => import('@/pages/LoginPage'))
 const RegisterPage = React.lazy(() => import('@/pages/RegisterPage'))
+const AdminDashboard = React.lazy(() => import('@/pages/AdminDashboard'))
 
 // Protected Pages - Patient Only
 const PatientDashboard = React.lazy(() => import('@/features/patient/pages/PatientDashboard'))
@@ -105,6 +107,11 @@ function App() {
                     } />
                     <Route path="/notifications" element={
                         <ProtectedRoute><NotificationsPage /></ProtectedRoute>
+                    } />
+
+                    {/* Admin Route */}
+                    <Route path="/admin" element={
+                        <AdminRoute><AdminDashboard /></AdminRoute>
                     } />
                 </Routes>
             </Suspense>

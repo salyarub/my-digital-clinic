@@ -4,13 +4,14 @@ from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from .models import User, Doctor, Patient, Secretary
-from .serializers import UserSerializer, DoctorSerializer, DoctorListSerializer, UserUpdateSerializer, SecretarySerializer
+from .serializers import UserSerializer, DoctorSerializer, DoctorListSerializer, UserUpdateSerializer, SecretarySerializer, AdminDoctorListSerializer
 from clinic.views import log_activity
 
 class RegisterUserView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]
+    parser_classes = [MultiPartParser, FormParser]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -19,9 +20,21 @@ class RegisterUserView(generics.CreateAPIView):
 
         # Create Profile based on role
         if user.role == User.Role.PATIENT:
-            Patient.objects.create(user=user)
+            gender = request.data.get('gender', 'M')
+            Patient.objects.create(user=user, gender=gender)
         elif user.role == User.Role.DOCTOR:
-            Doctor.objects.create(user=user, specialty="General", consultation_price=0)
+            specialty = request.data.get('specialty', 'General')
+            gender = request.data.get('gender', 'M')
+            license_image = request.data.get('license_image')
+            
+            Doctor.objects.create(
+                user=user, 
+                specialty=specialty, 
+                consultation_price=0,
+                gender=gender,
+                license_image=license_image,
+                is_verified=False # Explicitly set to False
+            )
         
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -397,4 +410,58 @@ class ResolveMapsLinkView(APIView):
             print(f"DEBUG: Exception: {str(e)}")
             return Response({'error': str(e)}, status=400)
 
+class AdminDoctorEntryView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+    
+    def get(self, request):
+        """List all unverified doctors"""
+        pending_doctors = Doctor.objects.filter(is_verified=False).select_related('user')
+        serializer = AdminDoctorListSerializer(pending_doctors, many=True)
+        return Response(serializer.data)
+        
+    def post(self, request):
+        """Approve or Reject doctor"""
+        doctor_id = request.data.get('doctor_id')
+        action = request.data.get('action') # 'approve' or 'reject'
+        
+        if not doctor_id or not action:
+            return Response({'error': 'doctor_id and action are required'}, status=400)
+            
+        try:
+            doctor = Doctor.objects.get(id=doctor_id)
+        except Doctor.DoesNotExist:
+            return Response({'error': 'Doctor not found'}, status=404)
+            
+        if action == 'approve':
+            doctor.is_verified = True
+            doctor.save()
+            return Response({'status': 'approved', 'message': f'Doctor {doctor.user.first_name} approved'})
+            
+        elif action == 'reject':
+            user = doctor.user
+            user.delete() # This cascades to doctor profile
+            return Response({'status': 'rejected', 'message': 'Doctor application rejected and removed'})
+            
+        return Response({'error': 'Invalid action'}, status=400)
 
+
+class AdminStatsView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+    
+    def get(self, request):
+        """Get system statistics for admin dashboard"""
+        from django.utils import timezone
+        from clinic.models import Booking
+        
+        today = timezone.now().date()
+        
+        stats = {
+            'totalDoctors': Doctor.objects.count(),
+            'verifiedDoctors': Doctor.objects.filter(is_verified=True).count(),
+            'pendingDoctors': Doctor.objects.filter(is_verified=False).count(),
+            'totalPatients': Patient.objects.count(),
+            'totalBookings': Booking.objects.count() if 'Booking' in dir() else 0,
+            'todayBookings': Booking.objects.filter(date=today).count() if 'Booking' in dir() else 0,
+        }
+        
+        return Response(stats)

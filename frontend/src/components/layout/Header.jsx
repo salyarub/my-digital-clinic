@@ -19,7 +19,8 @@ import {
     Clock,
     Activity,
     Moon,
-    Sun
+    Sun,
+    Shield
 } from 'lucide-react'
 
 const Header = () => {
@@ -39,6 +40,7 @@ const Header = () => {
     const isDoctor = user?.role === 'DOCTOR'
     const isPatient = user?.role === 'PATIENT'
     const isSecretary = user?.role === 'SECRETARY'
+    const isAdmin = user?.role === 'ADMIN'
     const permissions = user?.permissions || []
 
     const toggleLanguage = () => {
@@ -59,6 +61,12 @@ const Header = () => {
 
     // Navigation items based on role
     const getNavItems = () => {
+        // Admin navigation - exclusive to admin only
+        if (isAdmin) {
+            return [
+                { path: '/admin', icon: Shield, label: isRtl ? 'لوحة التحكم' : 'Dashboard' },
+            ]
+        }
         if (isDoctor) {
             return [
                 { path: '/doctor', icon: LayoutDashboard, label: isRtl ? 'لوحة التحكم' : 'Dashboard' },
@@ -97,12 +105,14 @@ const Header = () => {
     }
 
     const getRoleBadge = () => {
+        if (isAdmin) return isRtl ? 'مسؤول' : 'Admin'
         if (isDoctor) return isRtl ? 'طبيب' : 'Doctor'
         if (isSecretary) return isRtl ? 'سكرتير' : 'Secretary'
         return isRtl ? 'مريض' : 'Patient'
     }
 
     const getHomeRoute = () => {
+        if (isAdmin) return '/admin'
         if (isDoctor) return '/doctor'
         if (isSecretary) return '/secretary'
         return '/patient'

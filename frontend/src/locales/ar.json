@@ -35,5 +35,63 @@
     "confirmSlot": "تأكيد هذا الموعد",
     "successMsg": "تم إعادة جدولة الموعد بنجاح!",
     "addToCalendar": "إضافة للتقويم"
+  },
+  "admin": {
+    "title": "لوحة تحكم المسؤول",
+    "subtitle": "إدارة النظام والمستخدمين",
+    "refresh": "تحديث البيانات",
+    "tabs": {
+      "overview": "نظرة عامة",
+      "pending": "طلبات الأطباء",
+      "doctors": "الأطباء"
+    },
+    "stats": {
+      "pending": "طلبات قيد الانتظار",
+      "pendingSubtitle": "طبيب ينتظر الموافقة",
+      "verifiedDoctors": "الأطباء المفعلين",
+      "totalPatients": "إجمالي المرضى",
+      "todayBookings": "الحجوزات اليوم"
+    },
+    "quickActions": {
+      "title": "إجراءات سريعة",
+      "reviewRequests": "مراجعة الطلبات",
+      "manageDoctors": "إدارة الأطباء",
+      "reports": "التقارير والإحصائيات"
+    },
+    "requests": {
+      "title": "طلبات تسجيل الأطباء",
+      "pendingCount": "{{count}} طلب بانتظار الموافقة",
+      "needsReview": "طلبات تحتاج مراجعة",
+      "viewAll": "عرض جميع الطلبات",
+      "noPending": "لا توجد طلبات معلقة",
+      "allReviewed": "جميع الطلبات تمت مراجعتها"
+    },
+    "table": {
+      "name": "الاسم",
+      "email": "البريد الإلكتروني",
+      "gender": "الجنس",
+      "specialty": "التخصص",
+      "registrationDate": "تاريخ التسجيل",
+      "license": "الترخيص",
+      "actions": "الإجراءات",
+      "male": "ذكر",
+      "female": "أنثى",
+      "view": "عرض",
+      "noLicense": "لا يوجد",
+      "licenseTitle": "ترخيص مزاولة المهنة"
+    },
+    "actions": {
+      "approve": "قبول",
+      "reject": "رفض",
+      "approved": "تم تفعيل الطبيب بنجاح",
+      "rejected": "تم رفض الطلب",
+      "failed": "فشل تنفيذ العملية"
+    },
+    "doctors": {
+      "title": "جميع الأطباء",
+      "subtitle": "إدارة حسابات الأطباء المسجلين",
+      "comingSoon": "قريباً",
+      "comingSoonDesc": "سيتم إضافة إدارة كاملة للأطباء"
+    }
   }
 }

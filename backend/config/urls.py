@@ -4,7 +4,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
-from users.views import RegisterUserView, CurrentUserView, DoctorListView, DoctorDetailView, SecretaryViewSet, UpdateProfileView, DoctorProfileUpdateView, ResolveMapsLinkView, SecretaryDoctorProfileView
+from users.views import RegisterUserView, CurrentUserView, DoctorListView, DoctorDetailView, SecretaryViewSet, UpdateProfileView, DoctorProfileUpdateView, ResolveMapsLinkView, SecretaryDoctorProfileView, AdminDoctorEntryView, AdminStatsView
 from clinic.views import BookingViewSet, RatingViewSet, ActivityLogViewSet
 from scheduling.views import CheckConflictsView, TimeOffView, PublicReschedulingView, DoctorAvailabilityViewSet, DoctorSlotsView, DaySlotsView, TimeOffDetailView, AuthenticatedRescheduleAcceptView
 from notifications.views import NotificationListView, MarkNotificationReadView, MarkAllReadView
@@ -37,6 +37,8 @@ urlpatterns = [
     path('api/doctors/profile/', DoctorProfileUpdateView.as_view(), name='doctor_profile_update'),
 
     path('api/resolve-maps-link/', ResolveMapsLinkView.as_view(), name='resolve_maps_link'),
+    path('api/admin/doctors/', AdminDoctorEntryView.as_view(), name='admin_doctor_entry'),
+    path('api/admin/stats/', AdminStatsView.as_view(), name='admin_stats'),
 
     # Secretary endpoints
     path('api/secretary/doctor-profile/', SecretaryDoctorProfileView.as_view(), name='secretary_doctor_profile'),

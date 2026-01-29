@@ -8,13 +8,23 @@ class DoctorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Doctor
         fields = ['id', 'specialty', 'consultation_price', 'bio', 'location', 'landmark', 'latitude', 'longitude', 
-                  'facebook', 'instagram', 'tiktok', 'twitter', 'youtube', 'is_verified',
+                  'facebook', 'instagram', 'tiktok', 'twitter', 'youtube', 'is_verified', 'license_image', 'gender',
                   'session_duration', 'time_per_patient', 'allow_overbooking', 'preferred_calendar_view', 
                   'booking_visibility_weeks', 'is_digital_booking_active', 'booking_cutoff_hours', 'auto_approve_bookings',
                   'max_patients_per_session']
     
     def get_max_patients_per_session(self, obj):
         return obj.max_patients_per_session
+
+class AdminDoctorListSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source='user.first_name', read_only=True)
+    last_name = serializers.CharField(source='user.last_name', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
+    joined_at = serializers.DateTimeField(source='user.date_joined', read_only=True)
+    
+    class Meta:
+        model = Doctor
+        fields = ['id', 'first_name', 'last_name', 'email', 'specialty', 'license_image', 'is_verified', 'gender', 'joined_at']
 
 # New serializer for doctor listing with user info
 class DoctorListSerializer(serializers.ModelSerializer):

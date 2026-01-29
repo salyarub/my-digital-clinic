@@ -128,4 +128,39 @@ export const SecretaryRoute = ({ children }) => {
     return children
 }
 
+export const AdminRoute = ({ children }) => {
+    const token = localStorage.getItem('access_token')
+
+    const { data: user, isLoading } = useQuery({
+        queryKey: ['currentUser'],
+        queryFn: async () => {
+            const res = await api.get('auth/me/')
+            return res.data
+        },
+        enabled: !!token
+    })
+
+    if (!token) {
+        return <Navigate to="/login" replace />
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+        )
+    }
+
+    if (user?.role !== 'ADMIN') {
+        // Redirect based on role
+        if (user?.role === 'DOCTOR') return <Navigate to="/doctor" replace />
+        if (user?.role === 'PATIENT') return <Navigate to="/patient" replace />
+        if (user?.role === 'SECRETARY') return <Navigate to="/secretary" replace />
+        return <Navigate to="/login" replace />
+    }
+
+    return children
+}
+
 export default ProtectedRoute
