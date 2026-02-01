@@ -54,8 +54,7 @@ const Header = () => {
     }, [i18n.language])
 
     const handleLogout = () => {
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
+        logout() // This clears tokens, user state, and React Query cache
         navigate('/login')
     }
 

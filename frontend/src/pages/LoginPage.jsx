@@ -35,21 +35,24 @@ const LoginPage = () => {
 
     // Helper function to get translated error message
     const getTranslatedError = (errorData, originalError) => {
-        // Check for common error patterns and return translated version
-        if (errorData?.detail) {
-            const detail = errorData.detail.toLowerCase()
-            if (detail.includes('no active account') || detail.includes('given credentials')) {
-                return t('login.noActiveAccount')
+        // Check for specific error codes from the backend
+        if (errorData?.error) {
+            if (errorData.error === 'account_disabled') {
+                return t('login.accountDisabled')
             }
-            if (detail.includes('inactive') || detail.includes('disabled')) {
-                return t('login.accountInactive')
+            if (errorData.error === 'invalid_credentials') {
+                return t('login.invalidCredentials')
             }
         }
 
-        if (errorData?.error) {
-            const error = errorData.error.toLowerCase()
-            if (error.includes('credentials') || error.includes('password') || error.includes('invalid')) {
-                return t('login.invalidCredentials')
+        // Check for common error patterns in detail (fallback)
+        if (errorData?.detail) {
+            const detail = errorData.detail.toLowerCase()
+            if (detail.includes('disabled') || detail.includes('inactive')) {
+                return t('login.accountDisabled')
+            }
+            if (detail.includes('no active account') || detail.includes('given credentials')) {
+                return t('login.noActiveAccount')
             }
         }
 

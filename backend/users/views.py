@@ -3,9 +3,56 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
 from .models import User, Doctor, Patient, Secretary
 from .serializers import UserSerializer, DoctorSerializer, DoctorListSerializer, UserUpdateSerializer, SecretarySerializer, AdminDoctorListSerializer
 from clinic.views import log_activity
+
+
+class CustomLoginView(APIView):
+    """Custom login view that provides specific error messages for disabled accounts"""
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        
+        if not email or not password:
+            return Response(
+                {'error': 'email_and_password_required', 'detail': 'Email and password are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # First check if user exists
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'invalid_credentials', 'detail': 'Invalid email or password'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # Check if account is disabled BEFORE checking password
+        if not user.is_active:
+            return Response(
+                {'error': 'account_disabled', 'detail': 'Your account has been disabled. Please contact support.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Now verify password
+        if not user.check_password(password):
+            return Response(
+                {'error': 'invalid_credentials', 'detail': 'Invalid email or password'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # Generate tokens
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        })
 
 class RegisterUserView(generics.CreateAPIView):
     queryset = User.objects.all()

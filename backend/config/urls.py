@@ -4,11 +4,11 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
-from users.views import RegisterUserView, CurrentUserView, DoctorListView, DoctorDetailView, SecretaryViewSet, UpdateProfileView, DoctorProfileUpdateView, ResolveMapsLinkView, SecretaryDoctorProfileView, AdminDoctorEntryView, AdminStatsView
+from users.views import RegisterUserView, CurrentUserView, DoctorListView, DoctorDetailView, SecretaryViewSet, UpdateProfileView, DoctorProfileUpdateView, ResolveMapsLinkView, SecretaryDoctorProfileView, AdminDoctorEntryView, AdminStatsView, CustomLoginView
 from clinic.views import BookingViewSet, RatingViewSet, ActivityLogViewSet
 from scheduling.views import CheckConflictsView, TimeOffView, PublicReschedulingView, DoctorAvailabilityViewSet, DoctorSlotsView, DaySlotsView, TimeOffDetailView, AuthenticatedRescheduleAcceptView
 from notifications.views import NotificationListView, MarkNotificationReadView, MarkAllReadView
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenRefreshView
 
 router = DefaultRouter()
 router.register(r'bookings', BookingViewSet, basename='booking')
@@ -25,7 +25,7 @@ urlpatterns = [
     
     # Auth
     path('api/auth/register/', RegisterUserView.as_view(), name='register'),
-    path('api/auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/auth/login/', CustomLoginView.as_view(), name='custom_login'),
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/auth/me/', CurrentUserView.as_view(), name='current_user'),
     path('api/auth/profile/', UpdateProfileView.as_view(), name='update_profile'),

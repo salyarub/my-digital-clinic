@@ -16,7 +16,8 @@
     "invalidCredentials": "Invalid email or password",
     "noActiveAccount": "Invalid email or password",
     "networkError": "Network error. Please check your connection.",
-    "accountInactive": "Your account is inactive. Please contact support."
+    "accountInactive": "Your account is inactive. Please contact support.",
+    "accountDisabled": "Your account has been disabled. Please contact administration."
   },
   "doctor": {
     "dashboard": "Dashboard",
