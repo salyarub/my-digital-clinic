@@ -113,7 +113,7 @@ class StandardResultsSetPagination(PageNumberPagination):
     max_page_size = 100
 
 class DoctorListView(generics.ListAPIView):
-    queryset = Doctor.objects.select_related('user').all().order_by('user__first_name')
+    queryset = Doctor.objects.filter(is_verified=True).select_related('user').order_by('user__first_name')
     serializer_class = DoctorListSerializer
     permission_classes = [permissions.AllowAny]
     pagination_class = StandardResultsSetPagination
@@ -461,15 +461,15 @@ class AdminDoctorEntryView(APIView):
     permission_classes = [permissions.IsAdminUser]
     
     def get(self, request):
-        """List all unverified doctors"""
-        pending_doctors = Doctor.objects.filter(is_verified=False).select_related('user')
-        serializer = AdminDoctorListSerializer(pending_doctors, many=True)
+        """List all doctors (both verified and unverified)"""
+        all_doctors = Doctor.objects.select_related('user').order_by('-user__date_joined')
+        serializer = AdminDoctorListSerializer(all_doctors, many=True)
         return Response(serializer.data)
         
     def post(self, request):
-        """Approve or Reject doctor"""
+        """Activate or Deactivate doctor"""
         doctor_id = request.data.get('doctor_id')
-        action = request.data.get('action') # 'approve' or 'reject'
+        action = request.data.get('action') # 'activate' or 'deactivate'
         
         if not doctor_id or not action:
             return Response({'error': 'doctor_id and action are required'}, status=400)
@@ -479,15 +479,15 @@ class AdminDoctorEntryView(APIView):
         except Doctor.DoesNotExist:
             return Response({'error': 'Doctor not found'}, status=404)
             
-        if action == 'approve':
+        if action in ('approve', 'activate'):
             doctor.is_verified = True
             doctor.save()
-            return Response({'status': 'approved', 'message': f'Doctor {doctor.user.first_name} approved'})
-            
-        elif action == 'reject':
-            user = doctor.user
-            user.delete() # This cascades to doctor profile
-            return Response({'status': 'rejected', 'message': 'Doctor application rejected and removed'})
+            return Response({'status': 'activated', 'message': f'Doctor {doctor.user.first_name} activated'})
+        
+        elif action == 'deactivate':
+            doctor.is_verified = False
+            doctor.save()
+            return Response({'status': 'deactivated', 'message': f'Doctor {doctor.user.first_name} deactivated'})
             
         return Response({'error': 'Invalid action'}, status=400)
 

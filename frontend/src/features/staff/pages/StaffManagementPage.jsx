@@ -180,19 +180,19 @@ const StaffManagementPage = () => {
     return (
         <Layout>
             <div className="space-y-6">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold flex items-center gap-3">
-                            <Users className="h-8 w-8 text-primary" />
+                        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+                            <Users className="h-7 w-7 md:h-8 md:w-8 text-primary" />
                             {isRtl ? 'إدارة طاقم العمل' : 'Staff Management'}
                         </h1>
-                        <p className="text-muted-foreground mt-1">
+                        <p className="text-sm md:text-base text-muted-foreground mt-1">
                             {isRtl ? 'إضافة وإدارة حسابات السكرتارية وصلاحياتهم' : 'Add and manage secretary accounts and permissions'}
                         </p>
                     </div>
                     <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                         <DialogTrigger asChild>
-                            <Button className="gap-2">
+                            <Button className="gap-2 w-full sm:w-auto">
                                 <UserPlus className="h-4 w-4" />
                                 {isRtl ? 'إضافة سكرتير' : 'Add Secretary'}
                             </Button>
@@ -254,117 +254,75 @@ const StaffManagementPage = () => {
                         {isLoading ? (
                             <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
                         ) : secretaries?.length === 0 ? (
-                            <div className="text-center p-8 text-muted-foreground">{isRtl ? 'لم يتم إضافة موظفين بعد' : 'No staff members found'}</div>
+                            <div className="text-center p-12 text-muted-foreground">
+                                <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                                <p className="text-lg font-medium">{isRtl ? 'لم يتم إضافة موظفين بعد' : 'No staff members found'}</p>
+                                <p className="text-sm mt-1">{isRtl ? 'اضغط "إضافة سكرتير" للبدء' : 'Click "Add Secretary" to get started'}</p>
+                            </div>
                         ) : (
-                            <div className="space-y-4">
-                                {/* Mobile View: Stacked Cards */}
-                                <div className="block md:hidden space-y-4">
-                                    {secretaries.map((sec) => (
-                                        <div key={sec.id} className="p-4 border rounded-lg bg-card text-card-foreground shadow-sm space-y-3">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <div className="font-semibold">{sec.first_name} {sec.last_name}</div>
-                                                    <div className="text-sm text-muted-foreground">{sec.email}</div>
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                                {secretaries.map((sec) => (
+                                    <div key={sec.id} className="group relative rounded-xl border bg-card overflow-hidden transition-all hover:shadow-md hover:border-primary/30">
+                                        {/* Status indicator bar */}
+                                        <div className={`absolute top-0 left-0 right-0 h-1 ${sec.is_active ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-gradient-to-r from-red-400 to-rose-500'}`} />
+
+                                        <div className="p-5 pt-4">
+                                            {/* Header: Name + Status + Actions */}
+                                            <div className="flex items-start justify-between gap-3 mb-4">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <div className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 text-sm font-bold ${sec.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                                                        {sec.first_name?.[0]}{sec.last_name?.[0]}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h3 className="font-semibold text-base truncate">{sec.first_name} {sec.last_name}</h3>
+                                                        <p className="text-sm text-muted-foreground truncate">{sec.email}</p>
+                                                    </div>
                                                 </div>
-                                                <Badge variant={sec.is_active ? "success" : "destructive"} className={sec.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
-                                                    {sec.is_active ? (isRtl ? 'نشط' : 'Active') : (isRtl ? 'معطل' : 'Inactive')}
-                                                </Badge>
+                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                    <Badge className={`text-[11px] ${sec.is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800'}`}>
+                                                        {sec.is_active ? (isRtl ? 'نشط' : 'Active') : (isRtl ? 'معطل' : 'Inactive')}
+                                                    </Badge>
+                                                </div>
                                             </div>
 
-                                            <div className="space-y-1">
-                                                <div className="text-xs font-medium text-muted-foreground">{isRtl ? 'الصلاحيات:' : 'Permissions:'}</div>
-                                                <div className="flex flex-wrap gap-1">
+                                            {/* Permissions */}
+                                            <div className="mb-4">
+                                                <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+                                                    {isRtl ? 'الصلاحيات' : 'Permissions'} ({sec.permissions.length})
+                                                </p>
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                                                     {sec.permissions.map(p => {
                                                         const details = getPermissionDetails(p)
                                                         return (
-                                                            <Badge key={p} variant="outline" className="text-[10px] px-1.5 py-0.5">
-                                                                {details.label}
-                                                            </Badge>
+                                                            <div key={p} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-muted/50 border border-border/50 text-[11px]">
+                                                                {details.icon && <details.icon className="h-3.5 w-3.5 text-primary shrink-0" />}
+                                                                <span className="truncate">{details.label}</span>
+                                                            </div>
                                                         )
                                                     })}
                                                 </div>
                                             </div>
 
-                                            <div className="flex justify-end gap-2 pt-2 border-t">
-                                                <Button variant="outline" size="sm" onClick={() => openEditDialog(sec)} className="flex-1">
-                                                    <Edit2 className="h-4 w-4 mr-2" />
-                                                    {isRtl ? 'تعديل' : 'Edit'}
+                                            {/* Actions */}
+                                            <div className="flex gap-2 pt-3 border-t border-border/50">
+                                                <Button variant="outline" size="sm" onClick={() => openEditDialog(sec)} className="flex-1 gap-2">
+                                                    <Edit2 className="h-3.5 w-3.5" />
+                                                    {isRtl ? 'تعديل الصلاحيات' : 'Edit Permissions'}
                                                 </Button>
                                                 <Button
                                                     variant={sec.is_active ? "destructive" : "default"}
                                                     size="sm"
                                                     onClick={() => toggleActiveMutation.mutate(sec.id)}
-                                                    className="flex-1"
+                                                    disabled={toggleActiveMutation.isPending}
+                                                    className="gap-2"
                                                 >
-                                                    {sec.is_active ? <PowerOff className="h-4 w-4 mr-2" /> : <Power className="h-4 w-4 mr-2" />}
+                                                    {sec.is_active ? <PowerOff className="h-3.5 w-3.5" /> : <Power className="h-3.5 w-3.5" />}
                                                     {sec.is_active ? (isRtl ? 'تعطيل' : 'Disable') : (isRtl ? 'تفعيل' : 'Enable')}
                                                 </Button>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
-
-                                {/* Desktop View: Table */}
-                                <div className="hidden md:block">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>{isRtl ? 'الاسم' : 'Name'}</TableHead>
-                                                <TableHead>{isRtl ? 'البريد الإلكتروني' : 'Email'}</TableHead>
-                                                <TableHead>{isRtl ? 'الحالة' : 'Status'}</TableHead>
-                                                <TableHead>{isRtl ? 'الصلاحيات' : 'Permissions'}</TableHead>
-                                                <TableHead className="text-right">{isRtl ? 'إجراءات' : 'Actions'}</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {secretaries.map((sec) => (
-                                                <TableRow key={sec.id}>
-                                                    <TableCell className="font-medium">{sec.first_name} {sec.last_name}</TableCell>
-                                                    <TableCell>{sec.email}</TableCell>
-                                                    <TableCell>
-                                                        <Badge variant={sec.is_active ? "success" : "destructive"} className={sec.is_active ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-red-100 text-red-800 hover:bg-red-200"}>
-                                                            {sec.is_active ? (isRtl ? 'نشط' : 'Active') : (isRtl ? 'معطل' : 'Inactive')}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex flex-wrap gap-1">
-                                                            {sec.permissions.map(p => {
-                                                                const details = getPermissionDetails(p)
-                                                                return (
-                                                                    <Badge key={p} variant="outline" className="text-xs flex items-center gap-1">
-                                                                        {details.icon && <details.icon className="h-3 w-3" />}
-                                                                        {details.label}
-                                                                    </Badge>
-                                                                )
-                                                            })}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <div className="flex justify-end gap-2">
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => openEditDialog(sec)}
-                                                                title={isRtl ? 'تعديل الصلاحيات' : 'Edit Permissions'}
-                                                            >
-                                                                <Edit2 className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                variant={sec.is_active ? "destructive" : "default"}
-                                                                size="sm"
-                                                                onClick={() => toggleActiveMutation.mutate(sec.id)}
-                                                                disabled={toggleActiveMutation.isPending}
-                                                                title={sec.is_active ? "Disable Account" : "Enable Account"}
-                                                            >
-                                                                {sec.is_active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
-                                                            </Button>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </CardContent>

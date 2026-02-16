@@ -16,7 +16,7 @@ import {
 const ActivityLogPage = () => {
     const { t, i18n } = useTranslation()
     const isRtl = i18n.language === 'ar'
-    const [timeFilter, setTimeFilter] = useState('all')
+    const [timeFilter, setTimeFilter] = useState('day')
 
     const { data: logs, isLoading, isFetching, error, refetch } = useQuery({
         queryKey: ['activity-logs'],

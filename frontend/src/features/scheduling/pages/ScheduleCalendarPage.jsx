@@ -602,10 +602,13 @@ const ScheduleCalendarPage = () => {
                                                     {booking.is_walkin && <Badge variant="outline" className="ml-2 text-xs bg-white/50">{isRtl ? 'حضوري' : 'Walk-in'}</Badge>}
                                                     {booking.is_overflow && <Badge className="ml-2 text-xs bg-amber-100 text-amber-700 border-amber-300">{isRtl ? 'إضافي' : 'Extra'}</Badge>}
                                                 </p>
-                                                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1 flex-wrap">
                                                     <Clock className="h-3 w-3" />
                                                     {format(new Date(booking.booking_datetime), 'HH:mm')}
                                                     <Badge className="text-xs">{getStatusLabel(booking.status)}</Badge>
+                                                    <Badge className={`text-xs ${booking.booking_type === 'FOLLOWUP' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-teal-100 text-teal-700 border-teal-200'}`}>
+                                                        {booking.booking_type === 'FOLLOWUP' ? (isRtl ? 'مراجعة' : 'Follow-up') : (isRtl ? 'زيارة جديدة' : 'New Visit')}
+                                                    </Badge>
                                                     {booking.number_of_people > 1 && (
                                                         <Badge className="text-xs bg-indigo-100 text-indigo-700 border-indigo-200">
                                                             {booking.number_of_people} {isRtl ? 'أشخاص' : 'people'}

@@ -79,13 +79,20 @@
       "female": "Female",
       "view": "View",
       "noLicense": "N/A",
-      "licenseTitle": "Medical License"
+      "licenseTitle": "Medical License",
+      "status": "Status",
+      "active": "Active",
+      "inactive": "Inactive"
     },
     "actions": {
       "approve": "Approve",
       "reject": "Reject",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
       "approved": "Doctor approved successfully",
       "rejected": "Request rejected",
+      "activated": "Doctor activated successfully",
+      "deactivated": "Doctor deactivated successfully",
       "failed": "Operation failed"
     },
     "doctors": {
@@ -94,5 +101,41 @@
       "comingSoon": "Coming Soon",
       "comingSoonDesc": "Full doctor management will be added"
     }
+  },
+  "register": {
+    "title": "Create Account",
+    "subtitle": "Join our digital health platform",
+    "doctor": "Doctor",
+    "patient": "Patient",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email",
+    "password": "Password",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
+    "specialty": "Specialty",
+    "selectSpecialty": "Select Specialty",
+    "generalPractice": "General Practice",
+    "cardiology": "Cardiology",
+    "dermatology": "Dermatology",
+    "pediatrics": "Pediatrics",
+    "neurology": "Neurology",
+    "orthopedics": "Orthopedics",
+    "psychiatry": "Psychiatry",
+    "dentistry": "Dentistry",
+    "gynecology": "Gynecology",
+    "ophthalmology": "Ophthalmology",
+    "other": "Other",
+    "licenseUpload": "Medical License Upload",
+    "licenseHint": "Upload a clear image of your medical license for verification",
+    "registerButton": "Register",
+    "creatingAccount": "Creating Account...",
+    "doctorSuccess": "Account created! Please wait for admin approval.",
+    "patientSuccess": "Account created successfully! Please login.",
+    "registrationFailed": "Registration failed.",
+    "selectRole": "Choose your account type",
+    "haveAccount": "Already have an account?",
+    "loginLink": "Login"
   }
 }

@@ -215,10 +215,13 @@ const DoctorDashboardNew = () => {
         cancelMutation.mutate({ bookingId: selectedBookingId, message })
     }
 
-    const pendingBookings = bookings?.filter(b => b.status === 'PENDING') || []
-    const confirmedBookings = bookings?.filter(b => b.status === 'CONFIRMED') || []
-    const inProgressBookings = bookings?.filter(b => b.status === 'IN_PROGRESS') || []
-    const completedBookings = bookings?.filter(b => b.status === 'COMPLETED') || []
+    const todayStr = format(new Date(), 'yyyy-MM-dd')
+    const todayBookings = bookings?.filter(b => b.booking_datetime?.startsWith(todayStr)) || []
+
+    const pendingBookings = todayBookings.filter(b => b.status === 'PENDING')
+    const confirmedBookings = todayBookings.filter(b => b.status === 'CONFIRMED')
+    const inProgressBookings = todayBookings.filter(b => b.status === 'IN_PROGRESS')
+    const completedBookings = todayBookings.filter(b => b.status === 'COMPLETED')
     const unreadNotifications = notifications?.filter(n => !n.is_read).length || 0
 
     const getStatusBadge = (status) => {
@@ -314,10 +317,10 @@ const DoctorDashboardNew = () => {
 
                 {/* Stats */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <StatCard title={isRtl ? "معلق" : "Pending"} value={pendingBookings.length} icon={Clock} color="text-yellow-600" />
-                    <StatCard title={isRtl ? "مؤكد" : "Confirmed"} value={confirmedBookings.length} icon={CheckCircle} color="text-blue-600" />
+                    <StatCard title={isRtl ? "معلق اليوم" : "Pending Today"} value={pendingBookings.length} icon={Clock} color="text-yellow-600" />
+                    <StatCard title={isRtl ? "مؤكد اليوم" : "Confirmed Today"} value={confirmedBookings.length} icon={CheckCircle} color="text-blue-600" />
                     <StatCard title={isRtl ? "جاري الفحص" : "In Progress"} value={inProgressBookings.length} icon={Play} color="text-purple-600" />
-                    <StatCard title={isRtl ? "مكتمل" : "Completed"} value={completedBookings.length} icon={Users} color="text-green-600" />
+                    <StatCard title={isRtl ? "مكتمل اليوم" : "Completed Today"} value={completedBookings.length} icon={Users} color="text-green-600" />
                 </div>
 
                 {/* Pending */}

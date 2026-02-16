@@ -79,13 +79,20 @@
       "female": "أنثى",
       "view": "عرض",
       "noLicense": "لا يوجد",
-      "licenseTitle": "ترخيص مزاولة المهنة"
+      "licenseTitle": "ترخيص مزاولة المهنة",
+      "status": "الحالة",
+      "active": "مفعّل",
+      "inactive": "غير مفعّل"
     },
     "actions": {
       "approve": "قبول",
       "reject": "رفض",
+      "activate": "تفعيل",
+      "deactivate": "إلغاء التفعيل",
       "approved": "تم تفعيل الطبيب بنجاح",
       "rejected": "تم رفض الطلب",
+      "activated": "تم تفعيل الطبيب بنجاح",
+      "deactivated": "تم إلغاء تفعيل الطبيب بنجاح",
       "failed": "فشل تنفيذ العملية"
     },
     "doctors": {
@@ -94,5 +101,41 @@
       "comingSoon": "قريباً",
       "comingSoonDesc": "سيتم إضافة إدارة كاملة للأطباء"
     }
+  },
+  "register": {
+    "title": "إنشاء حساب",
+    "subtitle": "انضم إلى منصتنا الصحية الرقمية",
+    "doctor": "طبيب",
+    "patient": "مريض",
+    "firstName": "الاسم الأول",
+    "lastName": "الاسم الأخير",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "gender": "الجنس",
+    "male": "ذكر",
+    "female": "أنثى",
+    "specialty": "التخصص",
+    "selectSpecialty": "اختر التخصص",
+    "generalPractice": "طب عام",
+    "cardiology": "أمراض القلب",
+    "dermatology": "الأمراض الجلدية",
+    "pediatrics": "طب الأطفال",
+    "neurology": "الأمراض العصبية",
+    "orthopedics": "جراحة العظام",
+    "psychiatry": "الطب النفسي",
+    "dentistry": "طب الأسنان",
+    "gynecology": "أمراض النساء والتوليد",
+    "ophthalmology": "طب العيون",
+    "other": "أخرى",
+    "licenseUpload": "رفع رخصة مزاولة المهنة",
+    "licenseHint": "أرفق صورة واضحة لرخصة مزاولة المهنة للتحقق",
+    "registerButton": "تسجيل",
+    "creatingAccount": "جاري إنشاء الحساب...",
+    "doctorSuccess": "تم إنشاء الحساب! يرجى انتظار موافقة المسؤول.",
+    "patientSuccess": "تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول.",
+    "registrationFailed": "فشل التسجيل.",
+    "selectRole": "اختر نوع حسابك",
+    "haveAccount": "لديك حساب بالفعل؟",
+    "loginLink": "تسجيل الدخول"
   }
 }

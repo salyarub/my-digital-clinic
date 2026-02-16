@@ -237,6 +237,16 @@ const Header = () => {
                                 <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
                                     <Button className="w-full">{isRtl ? 'تسجيل جديد' : 'Sign Up'}</Button>
                                 </Link>
+                                <div className="border-t pt-2 mt-2 space-y-1">
+                                    <Button variant="ghost" className="w-full justify-start gap-3" onClick={toggleLanguage}>
+                                        <Globe className="h-5 w-5" />
+                                        {isRtl ? 'English' : 'العربية'}
+                                    </Button>
+                                    <Button variant="ghost" className="w-full justify-start gap-3" onClick={toggleTheme}>
+                                        {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                                        {theme === 'dark' ? (isRtl ? 'الوضع الفاتح' : 'Light Mode') : (isRtl ? 'الوضع الداكن' : 'Dark Mode')}
+                                    </Button>
+                                </div>
                             </>
                         )}
                     </div>

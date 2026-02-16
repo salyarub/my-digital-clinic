@@ -10,6 +10,7 @@ const LandingPage = React.lazy(() => import('@/pages/LandingPage'))
 const LoginPage = React.lazy(() => import('@/pages/LoginPage'))
 const RegisterPage = React.lazy(() => import('@/pages/RegisterPage'))
 const AdminDashboard = React.lazy(() => import('@/pages/AdminDashboard'))
+const NotFoundPage = React.lazy(() => import('@/pages/NotFoundPage'))
 
 // Protected Pages - Patient Only
 const PatientDashboard = React.lazy(() => import('@/features/patient/pages/PatientDashboard'))
@@ -113,6 +114,9 @@ function App() {
                     <Route path="/admin" element={
                         <AdminRoute><AdminDashboard /></AdminRoute>
                     } />
+
+                    {/* Catch-all 404 Route */}
+                    <Route path="*" element={<NotFoundPage />} />
                 </Routes>
             </Suspense>
             <Toaster position="top-center" richColors />

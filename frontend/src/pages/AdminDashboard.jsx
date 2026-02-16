@@ -62,7 +62,13 @@ const AdminDashboard = () => {
     const handleAction = async (doctorId, action) => {
         try {
             await api.post('admin/doctors/', { doctor_id: doctorId, action })
-            toast.success(action === 'approve' ? t('admin.actions.approved') : t('admin.actions.rejected'))
+            if (action === 'activate' || action === 'approve') {
+                toast.success(t('admin.actions.activated'))
+            } else if (action === 'deactivate') {
+                toast.success(t('admin.actions.deactivated'))
+            } else {
+                toast.success(t('admin.actions.rejected'))
+            }
             fetchData()
         } catch (error) {
             console.error(error)
@@ -122,8 +128,8 @@ const AdminDashboard = () => {
                         >
                             <tab.icon className="h-4 w-4" />
                             {tab.label}
-                            {tab.id === 'pending' && pendingDoctors.length > 0 && (
-                                <Badge variant="destructive" className="ml-1">{pendingDoctors.length}</Badge>
+                            {tab.id === 'pending' && pendingDoctors.filter(d => !d.is_verified).length > 0 && (
+                                <Badge variant="destructive" className="ml-1">{pendingDoctors.filter(d => !d.is_verified).length}</Badge>
                             )}
                         </Button>
                     ))}
@@ -142,7 +148,7 @@ const AdminDashboard = () => {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                     <StatCard
                                         title={t('admin.stats.pending')}
-                                        value={pendingDoctors.length}
+                                        value={pendingDoctors.filter(d => !d.is_verified).length}
                                         icon={Clock}
                                         color="from-orange-500 to-amber-500"
                                         subtitle={t('admin.stats.pendingSubtitle')}
@@ -183,7 +189,7 @@ const AdminDashboard = () => {
                                                 onClick={() => setActiveTab('pending')}
                                             >
                                                 <Clock className="h-6 w-6" />
-                                                <span>{t('admin.quickActions.reviewRequests')} ({pendingDoctors.length})</span>
+                                                <span>{t('admin.quickActions.reviewRequests')} ({pendingDoctors.filter(d => !d.is_verified).length})</span>
                                             </Button>
                                             <Button variant="outline" className="h-20 flex-col gap-2" onClick={() => setActiveTab('doctors')}>
                                                 <Stethoscope className="h-6 w-6" />
@@ -198,7 +204,7 @@ const AdminDashboard = () => {
                                 </Card>
 
                                 {/* Recent Pending Requests Preview */}
-                                {pendingDoctors.length > 0 && (
+                                {pendingDoctors.filter(d => !d.is_verified).length > 0 && (
                                     <Card className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/20">
                                         <CardHeader>
                                             <CardTitle className="text-orange-700 dark:text-orange-400 flex items-center gap-2">
@@ -208,30 +214,27 @@ const AdminDashboard = () => {
                                         </CardHeader>
                                         <CardContent>
                                             <div className="space-y-3">
-                                                {pendingDoctors.slice(0, 3).map(doc => (
+                                                {pendingDoctors.filter(d => !d.is_verified).slice(0, 3).map(doc => (
                                                     <div key={doc.id} className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
                                                         <div>
                                                             <p className="font-medium">{doc.first_name} {doc.last_name}</p>
                                                             <p className="text-sm text-muted-foreground">{doc.specialty} • {doc.email}</p>
                                                         </div>
                                                         <div className="flex gap-2">
-                                                            <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleAction(doc.id, 'approve')}>
+                                                            <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleAction(doc.id, 'activate')}>
                                                                 <Check className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button size="sm" variant="destructive" onClick={() => handleAction(doc.id, 'reject')}>
-                                                                <X className="h-4 w-4" />
                                                             </Button>
                                                         </div>
                                                     </div>
                                                 ))}
                                             </div>
-                                            {pendingDoctors.length > 3 && (
+                                            {pendingDoctors.filter(d => !d.is_verified).length > 3 && (
                                                 <Button
                                                     variant="link"
                                                     className="mt-4 w-full"
                                                     onClick={() => setActiveTab('pending')}
                                                 >
-                                                    {t('admin.requests.viewAll')} ({pendingDoctors.length})
+                                                    {t('admin.requests.viewAll')} ({pendingDoctors.filter(d => !d.is_verified).length})
                                                 </Button>
                                             )}
                                         </CardContent>
@@ -249,7 +252,7 @@ const AdminDashboard = () => {
                                         {t('admin.requests.title')}
                                     </CardTitle>
                                     <CardDescription>
-                                        {t('admin.requests.pendingCount', { count: pendingDoctors.length })}
+                                        {t('admin.requests.pendingCount', { count: pendingDoctors.filter(d => !d.is_verified).length })}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -268,6 +271,7 @@ const AdminDashboard = () => {
                                                         <TableHead>{t('admin.table.email')}</TableHead>
                                                         <TableHead>{t('admin.table.gender')}</TableHead>
                                                         <TableHead>{t('admin.table.specialty')}</TableHead>
+                                                        <TableHead>{t('admin.table.status')}</TableHead>
                                                         <TableHead>{t('admin.table.registrationDate')}</TableHead>
                                                         <TableHead>{t('admin.table.license')}</TableHead>
                                                         <TableHead className="text-left">{t('admin.table.actions')}</TableHead>
@@ -289,6 +293,11 @@ const AdminDashboard = () => {
                                                                 <Badge>{doc.specialty}</Badge>
                                                             </TableCell>
                                                             <TableCell>
+                                                                <Badge variant={doc.is_verified ? "default" : "secondary"} className={doc.is_verified ? "bg-green-600" : "bg-orange-500 text-white"}>
+                                                                    {doc.is_verified ? t('admin.table.active') : t('admin.table.inactive')}
+                                                                </Badge>
+                                                            </TableCell>
+                                                            <TableCell>
                                                                 {new Date(doc.joined_at).toLocaleDateString(i18n.language === 'ar' ? 'ar-IQ' : 'en-US')}
                                                             </TableCell>
                                                             <TableCell>
@@ -305,7 +314,7 @@ const AdminDashboard = () => {
                                                                             </DialogHeader>
                                                                             <div className="flex justify-center p-4">
                                                                                 <img
-                                                                                    src={doc.license_image}
+                                                                                    src={doc.license_image?.startsWith('http') ? doc.license_image : `http://${window.location.hostname}:8000${doc.license_image}`}
                                                                                     alt="License"
                                                                                     className="max-w-full h-auto rounded-lg border"
                                                                                 />
@@ -318,21 +327,24 @@ const AdminDashboard = () => {
                                                             </TableCell>
                                                             <TableCell>
                                                                 <div className="flex gap-2">
-                                                                    <Button
-                                                                        size="sm"
-                                                                        className="bg-green-600 hover:bg-green-700 gap-1"
-                                                                        onClick={() => handleAction(doc.id, 'approve')}
-                                                                    >
-                                                                        <Check className="h-4 w-4" /> {t('admin.actions.approve')}
-                                                                    </Button>
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="destructive"
-                                                                        className="gap-1"
-                                                                        onClick={() => handleAction(doc.id, 'reject')}
-                                                                    >
-                                                                        <X className="h-4 w-4" /> {t('admin.actions.reject')}
-                                                                    </Button>
+                                                                    {doc.is_verified ? (
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            className="gap-1 border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950"
+                                                                            onClick={() => handleAction(doc.id, 'deactivate')}
+                                                                        >
+                                                                            <X className="h-4 w-4" /> {t('admin.actions.deactivate')}
+                                                                        </Button>
+                                                                    ) : (
+                                                                        <Button
+                                                                            size="sm"
+                                                                            className="bg-green-600 hover:bg-green-700 gap-1"
+                                                                            onClick={() => handleAction(doc.id, 'activate')}
+                                                                        >
+                                                                            <Check className="h-4 w-4" /> {t('admin.actions.activate')}
+                                                                        </Button>
+                                                                    )}
                                                                 </div>
                                                             </TableCell>
                                                         </TableRow>

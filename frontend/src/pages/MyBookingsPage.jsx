@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label'
 import api from '@/lib/axios'
 import { toast } from 'sonner'
-import { Calendar, Clock, User, CheckCircle, XCircle, AlertCircle, Loader2, Users, Trash2, Star } from 'lucide-react'
+import { Calendar, Clock, User, CheckCircle, XCircle, AlertCircle, Loader2, Users, Trash2, Star, RefreshCw } from 'lucide-react'
 
 const MyBookingsPage = () => {
     const { i18n } = useTranslation()
@@ -27,6 +27,10 @@ const MyBookingsPage = () => {
     const [bookingToRate, setBookingToRate] = useState(null)
     const [ratingStars, setRatingStars] = useState(5)
     const [ratingComment, setRatingComment] = useState('')
+
+    // Re-rate Confirmation Dialog State
+    const [reRateDialogOpen, setReRateDialogOpen] = useState(false)
+    const [bookingToReRate, setBookingToReRate] = useState(null)
 
     // Helper to prevent date-fns crashes
     const safeFormat = (dateStr, pattern) => {
@@ -48,6 +52,14 @@ const MyBookingsPage = () => {
             return Array.isArray(res.data) ? res.data : (res.data.results || [])
         }
     })
+
+    // Fetch patient's existing ratings to check which doctors are already rated
+    const { data: myRatings } = useQuery({
+        queryKey: ['myRatings'],
+        queryFn: async () => (await api.get('clinic/ratings/')).data
+    })
+
+    const ratedDoctorIds = new Set(myRatings?.map(r => r.doctor) || [])
 
     const tabs = [
         { id: 'CONFIRMED', label: isRtl ? 'المؤكدة' : 'Confirmed', statuses: ['CONFIRMED', 'IN_PROGRESS'], icon: CheckCircle, color: 'text-blue-600 bg-blue-100' },
@@ -89,6 +101,7 @@ const MyBookingsPage = () => {
         onSuccess: () => {
             toast.success(isRtl ? 'تم إرسال التقييم بنجاح' : 'Rating submitted successfully')
             queryClient.invalidateQueries(['myBookings'])
+            queryClient.invalidateQueries(['myRatings'])
             setRateDialogOpen(false)
             setBookingToRate(null)
             setRatingStars(5)
@@ -96,6 +109,32 @@ const MyBookingsPage = () => {
         },
         onError: (error) => {
             toast.error(error.response?.data?.error || (isRtl ? 'فشل إرسال التقييم' : 'Failed to submit rating'))
+        }
+    })
+
+    // Delete old rating then open new rating dialog
+    const reRateMutation = useMutation({
+        mutationFn: async (doctorId) => {
+            const oldRating = myRatings?.find(r => r.doctor === doctorId)
+            if (oldRating) {
+                await api.delete(`clinic/ratings/${oldRating.id}/`)
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries(['myBookings'])
+            queryClient.invalidateQueries(['myRatings'])
+            setReRateDialogOpen(false)
+            // Open rating dialog for the new booking
+            if (bookingToReRate) {
+                setBookingToRate(bookingToReRate)
+                setRatingStars(5)
+                setRatingComment('')
+                setRateDialogOpen(true)
+                setBookingToReRate(null)
+            }
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.error || (isRtl ? 'فشل حذف التقييم السابق' : 'Failed to delete previous rating'))
         }
     })
 
@@ -272,7 +311,7 @@ const MyBookingsPage = () => {
                                                             {isRtl ? 'إلغاء' : 'Cancel'}
                                                         </Button>
                                                     )}
-                                                    {booking.status === 'COMPLETED' && !booking.is_rated && (
+                                                    {booking.status === 'COMPLETED' && !booking.is_rated && !ratedDoctorIds.has(booking.doctor) && (
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
@@ -282,11 +321,22 @@ const MyBookingsPage = () => {
                                                             {isRtl ? 'تقييم' : 'Rate'}
                                                         </Button>
                                                     )}
-                                                    {booking.status === 'COMPLETED' && booking.is_rated && (
-                                                        <div className="flex items-center gap-1 px-3 py-1 bg-yellow-50 text-yellow-700 rounded-md text-sm font-medium border border-yellow-200">
-                                                            <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />
-                                                            {isRtl ? 'تم التقييم' : 'Rated'}
-                                                        </div>
+                                                    {booking.status === 'COMPLETED' && (booking.is_rated || ratedDoctorIds.has(booking.doctor)) && (
+                                                        <>
+                                                            <div className="flex items-center gap-1 px-3 py-1 bg-yellow-50 text-yellow-700 rounded-md text-sm font-medium border border-yellow-200">
+                                                                <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" />
+                                                                {isRtl ? 'تم التقييم' : 'Rated'}
+                                                            </div>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="text-orange-500 border-orange-200 hover:bg-orange-50 hover:text-orange-600"
+                                                                onClick={() => { setBookingToReRate(booking); setReRateDialogOpen(true) }}
+                                                            >
+                                                                <RefreshCw className="h-4 w-4 mr-1" />
+                                                                {isRtl ? 'إعادة التقييم' : 'Re-rate'}
+                                                            </Button>
+                                                        </>
                                                     )}
                                                 </div>
                                             </div>
@@ -414,6 +464,47 @@ const MyBookingsPage = () => {
                                 {rateMutation.isPending
                                     ? (isRtl ? 'جاري الإرسال...' : 'Submitting...')
                                     : (isRtl ? 'إرسال التقييم' : 'Submit Rating')
+                                }
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Re-rate Confirmation Dialog */}
+                <Dialog open={reRateDialogOpen} onOpenChange={setReRateDialogOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="text-orange-600 flex items-center gap-2">
+                                <RefreshCw className="h-5 w-5" />
+                                {isRtl ? 'إعادة التقييم' : 'Re-rate Doctor'}
+                            </DialogTitle>
+                            <DialogDescription className="pt-2">
+                                {isRtl
+                                    ? 'سيؤدي هذا إلى حذف تقييمك السابق لهذا الطبيب واستبداله بتقييم جديد. هل أنت متأكد؟'
+                                    : 'This will delete your previous rating for this doctor and replace it with a new one. Are you sure?'
+                                }
+                            </DialogDescription>
+                        </DialogHeader>
+                        {bookingToReRate && (
+                            <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
+                                <p className="font-semibold text-lg">Dr. {bookingToReRate.doctor_name}</p>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    {isRtl ? 'سيتم حذف تقييمك السابق نهائياً' : 'Your previous rating will be permanently deleted'}
+                                </p>
+                            </div>
+                        )}
+                        <DialogFooter className="gap-2 sm:gap-0">
+                            <Button variant="outline" onClick={() => setReRateDialogOpen(false)}>
+                                {isRtl ? 'إلغاء' : 'Cancel'}
+                            </Button>
+                            <Button
+                                className="bg-orange-500 hover:bg-orange-600 text-white"
+                                onClick={() => reRateMutation.mutate(bookingToReRate?.doctor)}
+                                disabled={reRateMutation.isPending}
+                            >
+                                {reRateMutation.isPending
+                                    ? (isRtl ? 'جاري الحذف...' : 'Deleting...')
+                                    : (isRtl ? 'نعم، إعادة التقييم' : 'Yes, Re-rate')
                                 }
                             </Button>
                         </DialogFooter>

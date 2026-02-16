@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import api from '@/lib/axios'
 import { toast } from 'sonner'
-import { Stethoscope, Clock, CheckCircle, ArrowLeft, UserPlus, RefreshCw, Loader2, MapPin, Building, Facebook, Instagram, Twitter, Youtube, Video, Users, Trash2, AlertTriangle } from 'lucide-react'
+import { Stethoscope, Clock, CheckCircle, ArrowLeft, UserPlus, RefreshCw, Loader2, MapPin, Building, Facebook, Instagram, Twitter, Youtube, Video, Users, Trash2, AlertTriangle, DollarSign, Sparkles, CalendarDays } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import MapPicker from '@/components/ui/MapPicker'
 
@@ -36,7 +36,6 @@ const DoctorBookingPage = () => {
         }
     })
 
-    // Fetch available slots from API
     // Fetch available slots from API - Real-time data, no cache
     const { data: slotsData, isLoading: slotsLoading } = useQuery({
         queryKey: ['doctorSlots', doctorId],
@@ -44,8 +43,8 @@ const DoctorBookingPage = () => {
             const res = await api.get(`doctors/${doctorId}/slots/`)
             return res.data
         },
-        staleTime: 0, // Always fetch fresh data for slots
-        refetchOnWindowFocus: true // Update when user comes back to tab
+        staleTime: 0,
+        refetchOnWindowFocus: true
     })
 
     // Check if patient already has an active booking with this doctor
@@ -74,7 +73,6 @@ const DoctorBookingPage = () => {
     // Add blocked dates to the list
     const blockedDates = slotsData?.blocked_dates || []
     blockedDates.forEach(dateStr => {
-        // Ensure we don't overwrite existing slots (though theoretically shouldn't happen if blocked)
         if (!slotsByDate[dateStr]) {
             slotsByDate[dateStr] = 'BLOCKED'
         }
@@ -83,7 +81,7 @@ const DoctorBookingPage = () => {
     // Sort dates
     const sortedDateKeys = Object.keys(slotsByDate).sort()
 
-    // Book appointment mutation - SAVES TO REAL DATABASE
+    // Book appointment mutation
     const bookMutation = useMutation({
         mutationFn: async () => {
             const res = await api.post('clinic/bookings/', {
@@ -131,44 +129,54 @@ const DoctorBookingPage = () => {
         }
     })
 
-    const SocialIcon = ({ url, icon: Icon, color }) => {
+    const SocialIcon = ({ url, icon: Icon, color, bg }) => {
         if (!url) return null
         return (
-            <a href={url} target="_blank" rel="noopener noreferrer" className={`p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors ${color}`}>
+            <a href={url} target="_blank" rel="noopener noreferrer" className={`h-10 w-10 rounded-xl ${bg} flex items-center justify-center hover:scale-110 transition-all duration-200 ${color}`}>
                 <Icon className="h-5 w-5" />
             </a>
         )
     }
 
+    // ── Success Screen ──
     if (bookingSuccess) {
         return (
             <Layout>
-                <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <CheckCircle className="h-24 w-24 text-green-500 mb-6" />
-                    <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                        {isRtl ? 'تم الحجز بنجاح!' : 'Booking Confirmed!'}
+                <div className="flex flex-col items-center justify-center py-16 text-center max-w-lg mx-auto">
+                    <div className="h-28 w-28 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mb-6 shadow-xl shadow-green-500/20">
+                        <CheckCircle className="h-14 w-14 text-white" />
+                    </div>
+                    <h1 className="text-3xl font-bold mb-2">
+                        {isRtl ? 'تم الحجز بنجاح! 🎉' : 'Booking Confirmed! 🎉'}
                     </h1>
-                    <p className="text-gray-600 mb-2 max-w-md">
-                        {isRtl
-                            ? `موعدك يوم ${format(parseISO(selectedSlot.datetime), 'PPP', { locale: ar })} الساعة ${format(parseISO(selectedSlot.datetime), 'p')}`
-                            : `Your appointment is on ${format(parseISO(selectedSlot.datetime), 'PPP')} at ${format(parseISO(selectedSlot.datetime), 'p')}`
-                        }
-                    </p>
-                    <p className="text-sm text-primary mb-8">
-                        {bookingType === 'NEW'
-                            ? (isRtl ? '📋 حجز جديد' : '📋 New Patient')
-                            : (isRtl ? '🔄 مراجعة' : '🔄 Follow-up')
-                        }
-                        {numberOfPeople > 1 && (
-                            <span className="mr-2"> • {isRtl ? `${numberOfPeople} أشخاص` : `${numberOfPeople} people`}</span>
-                        )}
-                    </p>
-                    <div className="flex gap-4">
-                        <Button onClick={() => navigate('/my-bookings')} className="gap-2">
+                    <div className="bg-muted/50 rounded-2xl p-5 w-full mt-4 mb-2 space-y-2">
+                        <p className="text-muted-foreground">
+                            {isRtl
+                                ? `موعدك يوم ${format(parseISO(selectedSlot.datetime), 'PPP', { locale: ar })} الساعة ${format(parseISO(selectedSlot.datetime), 'p')}`
+                                : `Your appointment is on ${format(parseISO(selectedSlot.datetime), 'PPP')} at ${format(parseISO(selectedSlot.datetime), 'p')}`
+                            }
+                        </p>
+                        <div className="flex items-center justify-center gap-3">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${bookingType === 'NEW' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                                {bookingType === 'NEW'
+                                    ? (isRtl ? '📋 حجز جديد' : '📋 New Patient')
+                                    : (isRtl ? '🔄 مراجعة' : '🔄 Follow-up')
+                                }
+                            </span>
+                            {numberOfPeople > 1 && (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                                    <Users className="h-3 w-3" />
+                                    {isRtl ? `${numberOfPeople} أشخاص` : `${numberOfPeople} people`}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="flex gap-3 mt-6 w-full">
+                        <Button onClick={() => navigate('/my-bookings')} className="flex-1 gap-2 rounded-xl h-12 bg-gradient-to-r from-blue-500 to-indigo-500 hover:opacity-90 text-white">
                             {isRtl ? 'عرض حجوزاتي' : 'View My Bookings'}
                         </Button>
-                        <Button variant="outline" onClick={() => navigate('/patient')}>
-                            <ArrowLeft className="h-4 w-4 mr-2" />
+                        <Button variant="outline" onClick={() => navigate('/patient')} className="flex-1 gap-2 rounded-xl h-12">
+                            <ArrowLeft className="h-4 w-4" />
                             {isRtl ? 'العودة للبحث' : 'Back to Search'}
                         </Button>
                     </div>
@@ -179,74 +187,60 @@ const DoctorBookingPage = () => {
 
     return (
         <Layout>
-            <div className="max-w-4xl mx-auto space-y-8">
-                <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2">
+            <div className="max-w-4xl mx-auto space-y-6">
+                <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2 rounded-xl hover:bg-muted/80">
                     <ArrowLeft className="h-4 w-4" />
                     {isRtl ? 'رجوع' : 'Back'}
                 </Button>
 
-                {/* Warning: Active Booking Exists */}
+                {/* ── Warning: Active Booking Exists ── */}
                 {hasActiveBooking && (
-                    <Card className="border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 dark:border-amber-700 shadow-lg">
-                        <CardContent className="pt-6">
-                            <div className="flex flex-col md:flex-row items-start gap-4">
-                                <div className="bg-gradient-to-br from-amber-400 to-orange-500 p-4 rounded-2xl shadow-lg">
-                                    <AlertTriangle className="h-8 w-8 text-white" />
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="text-xl font-bold text-amber-800 dark:text-amber-400">
-                                        {isRtl ? 'لديك حجز نشط بالفعل' : 'You Have an Active Booking'}
-                                    </h3>
-
-                                    {/* Current Booking Details Card */}
-                                    <div className="mt-4 p-4 bg-white dark:bg-gray-800 rounded-xl border-2 border-amber-200 dark:border-amber-700 shadow-sm">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
-                                                <Clock className="h-6 w-6 text-amber-600" />
-                                            </div>
-                                            <div>
-                                                <p className="font-semibold text-gray-800 dark:text-gray-200">
-                                                    {format(parseISO(existingActiveBooking.booking_datetime), 'EEEE', { locale: isRtl ? ar : enUS })}
-                                                </p>
-                                                <p className="text-amber-700 dark:text-amber-300 font-medium">
-                                                    {format(parseISO(existingActiveBooking.booking_datetime), 'PPP', { locale: isRtl ? ar : enUS })}
-                                                </p>
-                                                <p className="text-lg font-bold text-primary">
-                                                    {format(parseISO(existingActiveBooking.booking_datetime), 'HH:mm')}
-                                                </p>
-                                            </div>
+                    <div className="rounded-2xl border-2 border-amber-300 dark:border-amber-700 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 p-6 shadow-lg">
+                        <div className="flex flex-col md:flex-row items-start gap-4">
+                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shrink-0">
+                                <AlertTriangle className="h-7 w-7 text-white" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-amber-800 dark:text-amber-400">
+                                    {isRtl ? 'لديك حجز نشط بالفعل' : 'You Have an Active Booking'}
+                                </h3>
+                                <div className="mt-3 p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl border border-amber-200 dark:border-amber-700">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-12 w-12 rounded-xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                                            <Clock className="h-6 w-6 text-amber-600" />
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold">
+                                                {format(parseISO(existingActiveBooking.booking_datetime), 'EEEE', { locale: isRtl ? ar : enUS })}
+                                            </p>
+                                            <p className="text-amber-700 dark:text-amber-300 font-medium">
+                                                {format(parseISO(existingActiveBooking.booking_datetime), 'PPP', { locale: isRtl ? ar : enUS })}
+                                            </p>
+                                            <p className="text-lg font-bold text-primary">
+                                                {format(parseISO(existingActiveBooking.booking_datetime), 'HH:mm')}
+                                            </p>
                                         </div>
                                     </div>
-
-                                    <p className="text-sm text-amber-600 dark:text-amber-400 mt-4">
-                                        {isRtl
-                                            ? 'لا يمكنك الحجز مجدداً إلا بعد إتمام أو إلغاء الحجز الحالي'
-                                            : 'You can only book again after your current appointment is completed or cancelled'
-                                        }
-                                    </p>
-
-                                    {/* Action Buttons */}
-                                    <div className="flex flex-wrap gap-3 mt-4">
-                                        <Button
-                                            className="bg-amber-600 hover:bg-amber-700 shadow-md"
-                                            onClick={() => navigate('/my-bookings')}
-                                        >
-                                            <Clock className="h-4 w-4 mr-2" />
-                                            {isRtl ? 'عرض حجوزاتي' : 'View My Bookings'}
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 shadow-sm"
-                                            onClick={() => setShowCancelDialog(true)}
-                                        >
-                                            <Trash2 className="h-4 w-4 mr-2" />
-                                            {isRtl ? 'إلغاء الحجز الحالي' : 'Cancel Current Booking'}
-                                        </Button>
-                                    </div>
+                                </div>
+                                <p className="text-sm text-amber-600 dark:text-amber-400 mt-3">
+                                    {isRtl
+                                        ? 'لا يمكنك الحجز مجدداً إلا بعد إتمام أو إلغاء الحجز الحالي'
+                                        : 'You can only book again after your current appointment is completed or cancelled'
+                                    }
+                                </p>
+                                <div className="flex flex-wrap gap-3 mt-4">
+                                    <Button className="bg-amber-600 hover:bg-amber-700 shadow-md rounded-xl gap-2" onClick={() => navigate('/my-bookings')}>
+                                        <Clock className="h-4 w-4" />
+                                        {isRtl ? 'عرض حجوزاتي' : 'View My Bookings'}
+                                    </Button>
+                                    <Button variant="outline" className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl gap-2" onClick={() => setShowCancelDialog(true)}>
+                                        <Trash2 className="h-4 w-4" />
+                                        {isRtl ? 'إلغاء الحجز الحالي' : 'Cancel Current Booking'}
+                                    </Button>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 )}
 
                 {/* Cancel Confirmation Dialog */}
@@ -292,71 +286,97 @@ const DoctorBookingPage = () => {
                     </DialogContent>
                 </Dialog>
 
-                {/* Doctor Header & Bio */}
-                <Card>
-                    <CardHeader>
-                        <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                            <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center text-primary overflow-hidden shrink-0">
+                {/* ── Doctor Hero Card ── */}
+                <div className="rounded-2xl border bg-card overflow-hidden">
+                    {/* Gradient Banner */}
+                    <div className="h-32 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 relative">
+                        <Stethoscope className="absolute top-4 right-6 h-20 w-20 text-white/10" />
+                        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card to-transparent"></div>
+                    </div>
+
+                    <div className="relative -mt-12 px-6 pb-6">
+                        <div className="flex flex-col md:flex-row items-center md:items-end gap-5">
+                            {/* Doctor Avatar */}
+                            <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-3xl font-bold shadow-xl ring-4 ring-card overflow-hidden shrink-0">
                                 {doctor?.profile_picture ? (
                                     <img src={doctor.profile_picture} alt="Dr." className="h-full w-full object-cover" />
                                 ) : (
                                     <Stethoscope className="h-10 w-10" />
                                 )}
                             </div>
-                            <div className="space-y-2 flex-1">
-                                <CardTitle className="text-2xl md:text-3xl">
-                                    Dr. {doctor?.first_name || 'Doctor'} {doctor?.last_name || ''}
-                                </CardTitle>
-                                <CardDescription className="text-lg font-medium text-primary">
-                                    {doctor?.specialty || 'General Practitioner'}
-                                </CardDescription>
 
+                            {/* Name & Specialty */}
+                            <div className="flex-1 text-center md:text-start pb-1">
+                                <h1 className="text-2xl font-bold">
+                                    Dr. {doctor?.first_name || 'Doctor'} {doctor?.last_name || ''}
+                                </h1>
+                                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-1.5">
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+                                        <Stethoscope className="h-3 w-3" />
+                                        {doctor?.specialty || 'General Practitioner'}
+                                    </span>
+                                </div>
                                 {/* Social Media Icons */}
-                                <div className="flex gap-2 pt-1">
-                                    <SocialIcon url={doctor?.facebook} icon={Facebook} color="text-blue-600" />
-                                    <SocialIcon url={doctor?.instagram} icon={Instagram} color="text-pink-600" />
-                                    <SocialIcon url={doctor?.twitter} icon={Twitter} color="text-sky-500" />
-                                    <SocialIcon url={doctor?.youtube} icon={Youtube} color="text-red-600" />
-                                    <SocialIcon url={doctor?.tiktok} icon={Video} color="text-black" />
+                                <div className="flex gap-2 mt-3 justify-center md:justify-start">
+                                    <SocialIcon url={doctor?.facebook} icon={Facebook} color="text-blue-600" bg="bg-blue-500/10" />
+                                    <SocialIcon url={doctor?.instagram} icon={Instagram} color="text-pink-500" bg="bg-pink-500/10" />
+                                    <SocialIcon url={doctor?.twitter} icon={Twitter} color="text-sky-500" bg="bg-sky-500/10" />
+                                    <SocialIcon url={doctor?.youtube} icon={Youtube} color="text-red-600" bg="bg-red-500/10" />
+                                    <SocialIcon url={doctor?.tiktok} icon={Video} color="text-gray-700 dark:text-gray-300" bg="bg-gray-500/10" />
                                 </div>
                             </div>
-                            <div className="text-right hidden md:block">
-                                <div className="text-2xl font-bold text-primary">{doctor?.consultation_price ? `$${doctor.consultation_price}` : 'Free'}</div>
-                                <div className="text-sm text-muted-foreground">{isRtl ? 'سعر الكشفية' : 'Consultation Fee'}</div>
+
+                            {/* Price Badge */}
+                            <div className="shrink-0">
+                                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800 rounded-2xl px-5 py-3 text-center">
+                                    <div className="flex items-center gap-1 justify-center">
+                                        <DollarSign className="h-5 w-5 text-emerald-500" />
+                                        <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                                            {doctor?.consultation_price || '0'}
+                                        </span>
+                                    </div>
+                                    <span className="text-xs text-muted-foreground">{isRtl ? 'سعر الكشفية' : 'Consultation Fee'}</span>
+                                </div>
                             </div>
                         </div>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
+                    </div>
+
+                    {/* Bio & Location */}
+                    <div className="px-6 pb-6 space-y-5">
                         {/* Bio */}
                         {doctor?.bio && (
-                            <div className="bg-muted/30 p-4 rounded-lg">
-                                <h3 className="font-semibold mb-2 flex items-center gap-2">
-                                    <UserPlus className="h-4 w-4" />
+                            <div className="rounded-xl bg-muted/30 p-4 border border-muted">
+                                <h3 className="font-semibold mb-2 flex items-center gap-2 text-sm">
+                                    <div className="h-7 w-7 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                                        <UserPlus className="h-3.5 w-3.5 text-violet-500" />
+                                    </div>
                                     {isRtl ? 'نبذة عن الطبيب' : 'About Doctor'}
                                 </h3>
-                                <p className="text-muted-foreground leading-relaxed">
+                                <p className="text-muted-foreground text-sm leading-relaxed ps-9">
                                     {doctor.bio}
                                 </p>
                             </div>
                         )}
 
-                        {/* Location Details */}
-                        <div className="grid md:grid-cols-2 gap-6">
-                            <div className="space-y-4">
-                                <h3 className="font-semibold flex items-center gap-2">
-                                    <Building className="h-4 w-4" />
+                        {/* Location */}
+                        <div className="grid md:grid-cols-2 gap-5">
+                            <div className="space-y-3">
+                                <h3 className="font-semibold flex items-center gap-2 text-sm">
+                                    <div className="h-7 w-7 rounded-lg bg-rose-500/10 flex items-center justify-center">
+                                        <Building className="h-3.5 w-3.5 text-rose-500" />
+                                    </div>
                                     {isRtl ? 'العنوان' : 'Address'}
                                 </h3>
-                                <div className="space-y-2 text-sm text-muted-foreground">
+                                <div className="space-y-2 text-sm text-muted-foreground ps-9">
                                     {doctor?.location && (
                                         <div className="flex items-start gap-2">
-                                            <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
+                                            <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-rose-400" />
                                             <span>{doctor.location}</span>
                                         </div>
                                     )}
                                     {doctor?.landmark && (
                                         <div className="flex items-start gap-2">
-                                            <Building className="h-4 w-4 mt-0.5 shrink-0" />
+                                            <Building className="h-4 w-4 mt-0.5 shrink-0 text-rose-400" />
                                             <span>{isRtl ? 'نقطة دالة: ' : 'Landmark: '}{doctor.landmark}</span>
                                         </div>
                                     )}
@@ -366,9 +386,9 @@ const DoctorBookingPage = () => {
                                 </div>
                             </div>
 
-                            {/* Map Preview */}
+                            {/* Map */}
                             {(doctor?.latitude && doctor?.longitude) ? (
-                                <div className="rounded-xl overflow-hidden border">
+                                <div className="rounded-xl overflow-hidden border shadow-sm">
                                     <MapPicker
                                         latitude={parseFloat(doctor.latitude)}
                                         longitude={parseFloat(doctor.longitude)}
@@ -377,71 +397,83 @@ const DoctorBookingPage = () => {
                                     />
                                 </div>
                             ) : (
-                                <div className="h-32 bg-muted/50 rounded-xl flex items-center justify-center text-muted-foreground text-sm border border-dashed">
+                                <div className="h-32 bg-muted/30 rounded-xl flex items-center justify-center text-muted-foreground text-sm border border-dashed">
+                                    <MapPin className="h-5 w-5 me-2 opacity-50" />
                                     {isRtl ? 'الموقع غير محدد على الخريطة' : 'Map location not set'}
                                 </div>
                             )}
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                {/* Booking Type Selection */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{isRtl ? 'نوع الحجز' : 'Booking Type'}</CardTitle>
-                        <CardDescription>
-                            {isRtl ? 'اختر نوع الزيارة' : 'Select your visit type'}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
+                {/* ── Booking Type ── */}
+                <div className="rounded-2xl border bg-card overflow-hidden">
+                    <div className="flex items-center gap-3 px-5 py-3.5 border-b bg-muted/30">
+                        <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                            <UserPlus className="h-4 w-4 text-blue-500" />
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-sm">{isRtl ? 'نوع الحجز' : 'Booking Type'}</h3>
+                            <p className="text-xs text-muted-foreground">{isRtl ? 'اختر نوع الزيارة' : 'Select your visit type'}</p>
+                        </div>
+                    </div>
+                    <div className="p-5">
                         <div className="grid grid-cols-2 gap-4">
                             <div
-                                className={`cursor-pointer rounded-xl border-2 p-6 flex flex-col items-center gap-3 transition-all
-                                    ${bookingType === 'NEW' ? 'border-primary bg-primary/5 shadow-md' : 'border-muted hover:border-gray-300'}`}
+                                className={`cursor-pointer rounded-2xl border-2 p-5 flex flex-col items-center gap-3 transition-all duration-300
+                                    ${bookingType === 'NEW'
+                                        ? 'border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 shadow-lg shadow-blue-500/10'
+                                        : 'border-muted hover:border-gray-300 hover:shadow-sm'}`}
                                 onClick={() => setBookingType('NEW')}
                             >
-                                <UserPlus className={`h-8 w-8 ${bookingType === 'NEW' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                <div className={`h-14 w-14 rounded-2xl flex items-center justify-center transition-all ${bookingType === 'NEW' ? 'bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-lg' : 'bg-muted text-muted-foreground'}`}>
+                                    <UserPlus className="h-7 w-7" />
+                                </div>
                                 <span className="font-semibold">{isRtl ? 'زيارة جديدة' : 'New Visit'}</span>
                                 <span className="text-xs text-muted-foreground text-center">
                                     {isRtl ? 'أول زيارة لهذا الطبيب' : 'First time visiting'}
                                 </span>
                             </div>
                             <div
-                                className={`cursor-pointer rounded-xl border-2 p-6 flex flex-col items-center gap-3 transition-all
-                                    ${bookingType === 'FOLLOWUP' ? 'border-primary bg-primary/5 shadow-md' : 'border-muted hover:border-gray-300'}`}
+                                className={`cursor-pointer rounded-2xl border-2 p-5 flex flex-col items-center gap-3 transition-all duration-300
+                                    ${bookingType === 'FOLLOWUP'
+                                        ? 'border-purple-500 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/30 dark:to-violet-950/30 shadow-lg shadow-purple-500/10'
+                                        : 'border-muted hover:border-gray-300 hover:shadow-sm'}`}
                                 onClick={() => setBookingType('FOLLOWUP')}
                             >
-                                <RefreshCw className={`h-8 w-8 ${bookingType === 'FOLLOWUP' ? 'text-primary' : 'text-muted-foreground'}`} />
+                                <div className={`h-14 w-14 rounded-2xl flex items-center justify-center transition-all ${bookingType === 'FOLLOWUP' ? 'bg-gradient-to-br from-purple-500 to-violet-500 text-white shadow-lg' : 'bg-muted text-muted-foreground'}`}>
+                                    <RefreshCw className="h-7 w-7" />
+                                </div>
                                 <span className="font-semibold">{isRtl ? 'مراجعة' : 'Follow-up'}</span>
                                 <span className="text-xs text-muted-foreground text-center">
                                     {isRtl ? 'زيارة متابعة لحالة سابقة' : 'Follow-up visit'}
                                 </span>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                {/* Number of People Selection */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Users className="h-5 w-5" />
-                            {isRtl ? 'عدد الأشخاص' : 'Number of People'}
-                        </CardTitle>
-                        <CardDescription>
-                            {isRtl ? 'كم شخص تريد الحجز لهم؟ (الحد الأقصى 5)' : 'How many people are you booking for? (Max 5)'}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
+                {/* ── Number of People ── */}
+                <div className="rounded-2xl border bg-card overflow-hidden">
+                    <div className="flex items-center gap-3 px-5 py-3.5 border-b bg-muted/30">
+                        <div className="h-8 w-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                            <Users className="h-4 w-4 text-indigo-500" />
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-sm">{isRtl ? 'عدد الأشخاص' : 'Number of People'}</h3>
+                            <p className="text-xs text-muted-foreground">{isRtl ? 'كم شخص تريد الحجز لهم؟ (الحد الأقصى 5)' : 'How many people are you booking for? (Max 5)'}</p>
+                        </div>
+                    </div>
+                    <div className="p-5">
                         <div className="flex items-center gap-4">
-                            <Label htmlFor="numberOfPeople" className="text-base">
+                            <Label htmlFor="numberOfPeople" className="text-sm font-medium">
                                 {isRtl ? 'عدد الأشخاص:' : 'People:'}
                             </Label>
                             <select
                                 id="numberOfPeople"
                                 value={numberOfPeople}
                                 onChange={(e) => setNumberOfPeople(Number(e.target.value))}
-                                className="w-28 h-10 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                className="w-32 h-11 px-4 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                             >
                                 {[1, 2, 3, 4, 5].map(num => (
                                     <option key={num} value={num}>
@@ -451,99 +483,117 @@ const DoctorBookingPage = () => {
                             </select>
                         </div>
                         {numberOfPeople > 1 && selectedSlot && selectedSlot.available_spots < numberOfPeople && (
-                            <p className="text-sm text-amber-600 mt-3 flex items-center gap-2">
+                            <p className="text-sm text-amber-600 mt-3 flex items-center gap-2 bg-amber-50 dark:bg-amber-950/30 p-3 rounded-xl">
                                 ⚠️ {isRtl
                                     ? `الموعد المختار به ${selectedSlot.available_spots} أماكن فقط. سيتم توزيع الباقي على المواعيد التالية تلقائياً.`
                                     : `Selected slot has only ${selectedSlot.available_spots} spots. Remaining will be auto-distributed to next slots.`
                                 }
                             </p>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                {/* Available Slots */}
-                <div className="space-y-6">
-                    <h2 className="text-xl font-bold">
-                        {isRtl ? 'المواعيد المتاحة' : 'Available Appointments'}
-                    </h2>
+                {/* ── Available Slots ── */}
+                <div className="space-y-4">
+                    <div className="flex items-center gap-3 px-1">
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-sm">
+                            <CalendarDays className="h-5 w-5 text-white" />
+                        </div>
+                        <h2 className="text-xl font-bold">
+                            {isRtl ? 'المواعيد المتاحة' : 'Available Appointments'}
+                        </h2>
+                    </div>
 
                     {slotsLoading ? (
                         <div className="flex justify-center py-12">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <div className="relative">
+                                <div className="h-14 w-14 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
+                                <Sparkles className="h-5 w-5 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                            </div>
                         </div>
                     ) : Object.keys(slotsByDate).length === 0 ? (
-                        <Card>
-                            <CardContent className="py-12 text-center text-muted-foreground">
-                                <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                                <p>{isRtl ? 'لا توجد مواعيد متاحة حالياً' : 'No available slots'}</p>
-                                <p className="text-sm mt-2">
-                                    {isRtl ? 'الطبيب لم يحدد جدول دوامه بعد' : "Doctor hasn't set their schedule yet"}
-                                </p>
-                            </CardContent>
-                        </Card>
+                        <div className="rounded-2xl border bg-card py-14 text-center">
+                            <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                                <Clock className="h-7 w-7 text-muted-foreground" />
+                            </div>
+                            <p className="font-semibold">{isRtl ? 'لا توجد مواعيد متاحة حالياً' : 'No available slots'}</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                {isRtl ? 'الطبيب لم يحدد جدول دوامه بعد' : "Doctor hasn't set their schedule yet"}
+                            </p>
+                        </div>
                     ) : (
                         sortedDateKeys.map((dateKey) => {
                             const dayData = slotsByDate[dateKey]
                             const isBlocked = dayData === 'BLOCKED'
 
                             return (
-                                <Card key={dateKey} className={isBlocked ? "border-red-200 bg-red-50" : ""}>
-                                    <CardHeader className="pb-2">
-                                        <div className="flex justify-between items-center">
-                                            <CardTitle className="text-lg">
-                                                {format(new Date(dateKey), 'EEEE, d MMMM', { locale: isRtl ? ar : enUS })}
-                                            </CardTitle>
-                                            {isBlocked && (
-                                                <span className="px-3 py-1 rounded-full bg-red-100 text-red-600 text-xs font-bold border border-red-200">
-                                                    {isRtl ? 'الحجز متوقف' : 'Booking Stopped'}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent>
+                                <div key={dateKey} className={`rounded-2xl border overflow-hidden ${isBlocked ? 'border-red-200 dark:border-red-900' : 'bg-card'}`}>
+                                    <div className={`flex justify-between items-center px-5 py-3 border-b ${isBlocked ? 'bg-red-50 dark:bg-red-950/20' : 'bg-muted/30'}`}>
+                                        <h3 className="font-semibold text-sm">
+                                            {format(new Date(dateKey), 'EEEE, d MMMM', { locale: isRtl ? ar : enUS })}
+                                        </h3>
+                                        {isBlocked && (
+                                            <span className="px-3 py-1 rounded-full bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 text-xs font-bold border border-red-200 dark:border-red-800">
+                                                {isRtl ? 'الحجز متوقف' : 'Booking Stopped'}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="p-5">
                                         {isBlocked ? (
-                                            <div className="text-center py-6 text-red-500 font-medium">
+                                            <div className="text-center py-4 text-red-500 font-medium">
                                                 <p>{isRtl ? 'نعتذر، الحجز غير متاح لهذا اليوم' : 'Sorry, booking is stopped for this day'}</p>
                                             </div>
                                         ) : (
                                             <div className="flex flex-wrap gap-2">
-                                                {dayData.map((slot, idx) => (
-                                                    <Button
-                                                        key={idx}
-                                                        variant={slot.is_full ? "ghost" : (selectedSlot?.datetime === slot.datetime ? "default" : "outline")}
-                                                        size="sm"
-                                                        className={`gap-2 ${slot.is_full ? 'opacity-50 cursor-not-allowed border-red-300 bg-red-50 text-red-600 hover:bg-red-50' : ''}`}
-                                                        onClick={() => !slot.is_full && setSelectedSlot(slot)}
-                                                        disabled={slot.is_full}
-                                                    >
-                                                        <Clock className="h-3 w-3" />
-                                                        {format(parseISO(slot.datetime), 'h:mm a')}
-                                                        {slot.is_full ? (
-                                                            <span className="text-xs font-bold text-red-600">
-                                                                {isRtl ? 'مكتمل' : 'FULL'}
-                                                            </span>
-                                                        ) : slot.booked_people > 0 && (
-                                                            <span className="text-xs opacity-70">
-                                                                ({slot.booked_people}/{slot.max_spots} {isRtl ? 'محجوز' : 'booked'})
-                                                            </span>
-                                                        )}
-                                                    </Button>
-                                                ))}
+                                                {dayData.map((slot, idx) => {
+                                                    const isSelected = selectedSlot?.datetime === slot.datetime
+                                                    const isFull = slot.is_full
+                                                    return (
+                                                        <button
+                                                            key={idx}
+                                                            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+                                                                ${isFull
+                                                                    ? 'bg-red-50 dark:bg-red-950/20 text-red-400 border border-red-200 dark:border-red-800 cursor-not-allowed opacity-60'
+                                                                    : isSelected
+                                                                        ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/20 scale-105'
+                                                                        : 'bg-muted/50 hover:bg-primary/10 border border-transparent hover:border-primary/30 hover:shadow-sm'
+                                                                }`}
+                                                            onClick={() => !isFull && setSelectedSlot(slot)}
+                                                            disabled={isFull}
+                                                        >
+                                                            <Clock className="h-3.5 w-3.5" />
+                                                            {format(parseISO(slot.datetime), 'h:mm a')}
+                                                            {isFull ? (
+                                                                <span className="text-xs font-bold text-red-500">
+                                                                    {isRtl ? 'مكتمل' : 'FULL'}
+                                                                </span>
+                                                            ) : slot.booked_people > 0 && (
+                                                                <span className="text-xs opacity-70">
+                                                                    ({slot.booked_people}/{slot.max_spots})
+                                                                </span>
+                                                            )}
+                                                        </button>
+                                                    )
+                                                })}
                                             </div>
                                         )}
-                                    </CardContent>
-                                </Card>
+                                    </div>
+                                </div>
                             )
                         })
                     )}
                 </div>
 
-                {/* Confirm Button */}
-                <div className="sticky bottom-4 bg-background/80 backdrop-blur-sm p-4 rounded-lg border shadow-lg">
+                {/* ── Confirm Button ── */}
+                <div className="sticky bottom-4 bg-background/80 backdrop-blur-md p-4 rounded-2xl border shadow-xl">
                     <Button
-                        className="w-full h-12 text-lg"
+                        className={`w-full h-13 text-base rounded-xl font-semibold transition-all duration-300 ${selectedSlot && !hasActiveBooking
+                                ? 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:opacity-90 text-white shadow-lg'
+                                : ''
+                            }`}
                         disabled={!selectedSlot || bookMutation.isPending || hasActiveBooking}
                         onClick={() => bookMutation.mutate()}
+                        size="lg"
                     >
                         {hasActiveBooking
                             ? (isRtl ? 'لديك حجز نشط بالفعل' : 'You have an active booking')

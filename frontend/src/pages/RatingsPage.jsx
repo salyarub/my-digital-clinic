@@ -162,7 +162,8 @@ const RatingsPage = () => {
     })
 
     const ratedBookingIds = new Set(ratings?.map(r => r.booking) || [])
-    const pendingRatings = bookings?.filter(b => b.status === 'COMPLETED' && !ratedBookingIds.has(b.id)) || []
+    const ratedDoctorIds = new Set(ratings?.map(r => r.doctor) || [])
+    const pendingRatings = bookings?.filter(b => b.status === 'COMPLETED' && !ratedBookingIds.has(b.id) && !ratedDoctorIds.has(b.doctor)) || []
 
     const renderStars = (count) => (
         <div className="flex gap-0.5">
