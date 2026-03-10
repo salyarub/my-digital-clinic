@@ -6,7 +6,19 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import api from '@/lib/axios'
 import { toast } from 'sonner'
-import { Save, Pencil, X, Mail, Phone, Shield, Sparkles } from 'lucide-react'
+import { Save, Pencil, X, Mail, Phone, Shield, Sparkles, Key, Trash2, AlertTriangle } from 'lucide-react'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useAuth } from '@/context/AuthContext'
 
 const ProfilePage = () => {
     const { i18n } = useTranslation()
@@ -27,6 +39,15 @@ const ProfilePage = () => {
         last_name: '',
         phone: ''
     })
+
+    const [passwordData, setPasswordData] = useState({
+        old_password: '',
+        new_password: '',
+        confirm_password: ''
+    })
+    const [isPasswordSectionOpen, setIsPasswordSectionOpen] = useState(false)
+    const [deletePassword, setDeletePassword] = useState('')
+    const { logout } = useAuth()
 
     React.useEffect(() => {
         if (user) {
@@ -61,12 +82,62 @@ const ProfilePage = () => {
         }
     })
 
+    const changePasswordMutation = useMutation({
+        mutationFn: async (data) => {
+            const res = await api.post('auth/change-password/', data)
+            return res.data
+        },
+        onSuccess: () => {
+            toast.success(isRtl ? 'تم تغيير كلمة المرور بنجاح' : 'Password changed successfully')
+            setPasswordData({ old_password: '', new_password: '', confirm_password: '' })
+            setIsPasswordSectionOpen(false)
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.error || (isRtl ? 'فشل تغيير كلمة المرور' : 'Failed to change password'))
+        }
+    })
+
+    const deleteAccountMutation = useMutation({
+        mutationFn: async (password) => {
+            const res = await api.delete('auth/delete-account/', { data: { password } })
+            return res.data
+        },
+        onSuccess: (data) => {
+            toast.success(data.message || (isRtl ? 'تم حذف الحساب بنجاح' : 'Account deleted successfully'))
+            logout()
+        },
+        onError: (error) => {
+            const errorMsg = error.response?.data?.error;
+            if (errorMsg === 'Invalid password') {
+                toast.error(isRtl ? 'كلمة المرور غير صحيحة' : 'Invalid password')
+            } else {
+                toast.error(errorMsg || (isRtl ? 'فشل حذف الحساب' : 'Failed to delete account'))
+            }
+        }
+    })
+
     const handleChange = (e) => {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
     }
 
+    const handlePasswordChange = (e) => {
+        setPasswordData(prev => ({ ...prev, [e.target.name]: e.target.value }))
+    }
+
     const handleSave = () => {
         updateMutation.mutate(formData)
+    }
+
+    const handleChangePasswordSubmit = (e) => {
+        e.preventDefault()
+        if (passwordData.new_password !== passwordData.confirm_password) {
+            toast.error(isRtl ? 'كلمتا المرور غير متطابقتين' : 'Passwords do not match')
+            return
+        }
+        changePasswordMutation.mutate({
+            old_password: passwordData.old_password,
+            new_password: passwordData.new_password
+        })
     }
 
     const getRoleLabel = (role) => {
@@ -267,8 +338,151 @@ const ProfilePage = () => {
                         </Button>
                     </div>
                 )}
+
+                {/* Account Management Section */}
+                {isEditing && (
+                    <div className="mt-12 space-y-6 pt-8 border-t border-border">
+                        <h2 className="text-xl font-bold flex items-center gap-2">
+                            <Shield className="h-5 w-5 text-primary" />
+                            {isRtl ? 'إدارة الحساب' : 'Account Management'}
+                        </h2>
+
+                        {/* Change Password */}
+                        <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
+                            <div
+                                className="p-4 flex items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors"
+                                onClick={() => setIsPasswordSectionOpen(!isPasswordSectionOpen)}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                                        <Key className="h-5 w-5 text-blue-500" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold">{isRtl ? 'تغيير كلمة المرور' : 'Change Password'}</h3>
+                                        <p className="text-sm text-muted-foreground">{isRtl ? 'تحديث كلمة مرور حسابك' : 'Update your account password'}</p>
+                                    </div>
+                                </div>
+                                <Button variant="outline" size="sm">
+                                    {isPasswordSectionOpen ? (isRtl ? 'إغلاق' : 'Close') : (isRtl ? 'تغيير' : 'Change')}
+                                </Button>
+                            </div>
+
+                            {isPasswordSectionOpen && (
+                                <form onSubmit={handleChangePasswordSubmit} className="p-4 border-t bg-muted/20 space-y-4">
+                                    <div className="space-y-4 max-w-sm">
+                                        <Input
+                                            type="password"
+                                            name="old_password"
+                                            placeholder={isRtl ? 'كلمة المرور الحالية' : 'Current Password'}
+                                            value={passwordData.old_password}
+                                            onChange={handlePasswordChange}
+                                            required
+                                        />
+                                        <Input
+                                            type="password"
+                                            name="new_password"
+                                            placeholder={isRtl ? 'كلمة المرور الجديدة' : 'New Password'}
+                                            value={passwordData.new_password}
+                                            onChange={handlePasswordChange}
+                                            required
+                                            minLength={6}
+                                        />
+                                        <Input
+                                            type="password"
+                                            name="confirm_password"
+                                            placeholder={isRtl ? 'تأكيد كلمة المرور' : 'Confirm Password'}
+                                            value={passwordData.confirm_password}
+                                            onChange={handlePasswordChange}
+                                            required
+                                        />
+                                        <Button
+                                            type="submit"
+                                            disabled={changePasswordMutation.isPending}
+                                            className="w-full"
+                                        >
+                                            {changePasswordMutation.isPending
+                                                ? (isRtl ? 'جاري التغيير...' : 'Changing...')
+                                                : (isRtl ? 'حفظ كلمة المرور' : 'Save Password')
+                                            }
+                                        </Button>
+                                    </div>
+                                </form>
+                            )}
+                        </div>
+
+                        {/* Delete Account */}
+                        <div className="bg-card border border-red-200 dark:border-red-900/50 rounded-xl p-4 shadow-sm flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                                    <Trash2 className="h-5 w-5 text-red-500" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-red-600 dark:text-red-400">
+                                        {isRtl ? 'حذف الحساب' : 'Delete Account'}
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground max-w-md">
+                                        {isRtl
+                                            ? 'بمجرد حذف حسابك، سيتم إخفاؤه مباشرة ولن يظهر للمرضى. إذا لم تقم بتسجيل الدخول خلال 30 يوماً، سيتم حذفه نهائياً.'
+                                            : 'Once deleted, your account will be hidden immediately. If you do not log back in within 30 days, it will be permanently deleted.'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="sm" className="gap-2">
+                                        <Trash2 className="h-4 w-4" />
+                                        {isRtl ? 'حذف الحساب' : 'Delete'}
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                                            <AlertTriangle className="h-5 w-5" />
+                                            {isRtl ? 'هل أنت متأكد من حذف الحساب؟' : 'Are you sure you want to delete your account?'}
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription className="text-base text-foreground mt-2 leading-relaxed">
+                                            {isRtl
+                                                ? 'سيتم تسجيل خروجك وسيعتبر حسابك محذوفاً. سيتم إخفاء بياناتك. '
+                                                : 'You will be logged out and your account will be marked for deletion. Your profile will be hidden. '}
+                                            <br /><br />
+                                            <strong className="text-primary font-bold">
+                                                {isRtl
+                                                    ? 'لإلغاء عملية الحذف واستعادة حسابك، يكفي أن تقوم بتسجيل الدخول مرة أخرى خلال 30 يوماً.'
+                                                    : 'To cancel the deletion and restore your account, simply log back in within 30 days.'}
+                                            </strong>
+                                        </AlertDialogDescription>
+                                        <div className="mt-4">
+                                            <Input
+                                                type="password"
+                                                placeholder={isRtl ? 'أدخل كلمة المرور لتأكيد الحذف' : 'Enter your password to confirm'}
+                                                value={deletePassword}
+                                                onChange={(e) => setDeletePassword(e.target.value)}
+                                            />
+                                        </div>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter className="mt-6 gap-2">
+                                        <AlertDialogCancel className="mt-0" onClick={() => setDeletePassword('')}>
+                                            {isRtl ? 'إلغاء' : 'Cancel'}
+                                        </AlertDialogCancel>
+                                        <Button
+                                            variant="destructive"
+                                            disabled={!deletePassword || deleteAccountMutation.isPending}
+                                            onClick={() => deleteAccountMutation.mutate(deletePassword)}
+                                        >
+                                            {deleteAccountMutation.isPending
+                                                ? (isRtl ? 'جاري الحذف...' : 'Deleting...')
+                                                : (isRtl ? 'نعم، احذف الحساب' : 'Yes, Delete Account')
+                                            }
+                                        </Button>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
+                    </div>
+                )}
             </div>
-        </Layout>
+        </Layout >
     )
 }
 

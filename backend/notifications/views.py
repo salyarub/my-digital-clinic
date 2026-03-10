@@ -21,6 +21,11 @@ class NotificationListView(APIView):
         elif user.role == User.Role.SECRETARY and hasattr(user, 'secretary_profile'):
             notifications = SecretaryNotification.objects.filter(recipient=user.secretary_profile)
             serializer = SecretaryNotificationSerializer(notifications, many=True)
+        elif user.role == User.Role.ADMIN:
+            from .models import AdminNotification
+            from .serializers import AdminNotificationSerializer
+            notifications = AdminNotification.objects.all()
+            serializer = AdminNotificationSerializer(notifications, many=True)
         else:
             return Response([])
         
@@ -39,6 +44,9 @@ class MarkNotificationReadView(APIView):
                 notification = PatientNotification.objects.get(id=notification_id, recipient=user.patient_profile)
             elif user.role == User.Role.SECRETARY:
                 notification = SecretaryNotification.objects.get(id=notification_id, recipient=user.secretary_profile)
+            elif user.role == User.Role.ADMIN:
+                from .models import AdminNotification
+                notification = AdminNotification.objects.get(id=notification_id)
             else:
                 return Response({'error': 'Invalid user role'}, status=400)
             
@@ -67,6 +75,11 @@ class MarkAllReadView(APIView):
             SecretaryNotification.objects.filter(recipient=user.secretary_profile, is_read=False).update(
                 is_read=True, read_at=timezone.now()
             )
+        elif user.role == User.Role.ADMIN:
+            from .models import AdminNotification
+            AdminNotification.objects.filter(is_read=False).update(
+                is_read=True, read_at=timezone.now()
+            )
         
         return Response({'status': 'all marked as read'})
 
@@ -87,6 +100,18 @@ def create_notification(recipient_type, recipient, notification_type, message, r
             message=message,
             related_object_id=str(related_object_id) if related_object_id else None
         )
+        # Forward to authorized secretaries
+        from users.models import Secretary
+        secretaries = Secretary.objects.filter(doctor=recipient)
+        for sec in secretaries:
+            permissions = sec.permissions or []
+            if 'receive_notifications' in permissions:
+                SecretaryNotification.objects.create(
+                    recipient=sec,
+                    notification_type=notification_type,
+                    message=message,
+                    related_object_id=str(related_object_id) if related_object_id else None
+                )
     elif recipient_type == 'patient':
         PatientNotification.objects.create(
             recipient=recipient,

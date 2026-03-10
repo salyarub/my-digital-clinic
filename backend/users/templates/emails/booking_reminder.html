@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9fafb;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .header {
+            text-align: center;
+            color: #059669;
+            margin-bottom: 20px;
+        }
+
+        .icon {
+            text-align: center;
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #6B7280;
+            text-align: center;
+        }
+
+        p {
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        .appointment-box {
+            background-color: #F0FDF4;
+            border: 1px solid #BBF7D0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 15px;
+        }
+
+        .appointment-box .detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #E5E7EB;
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .appointment-box .detail:last-child {
+            border-bottom: none;
+        }
+
+        .appointment-box .label {
+            font-weight: bold;
+            color: #059669;
+        }
+    </style>
+</head>
+
+<body dir="rtl">
+    <div class="container">
+        <div class="icon">⏰</div>
+        <h2 class="header">تذكير بموعدك</h2>
+        <p>مرحباً {{ patient_name }}،</p>
+        <p>نود تذكيرك بأن لديك موعد قادم:</p>
+        <div class="appointment-box">
+            <div class="detail">
+                <span class="label">الطبيب:</span>
+                <span>د. {{ doctor_name }}</span>
+            </div>
+            <div class="detail">
+                <span class="label">التاريخ:</span>
+                <span>{{ appointment_date }}</span>
+            </div>
+            <div class="detail">
+                <span class="label">الوقت:</span>
+                <span>{{ appointment_time }}</span>
+            </div>
+        </div>
+        <p style="margin-top: 20px; text-align: center;">نتمنى لك موعداً موفقاً! 🏥</p>
+        <div class="footer">
+            <p>عيادتك الرقمية - My Digital Clinic</p>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -64,6 +64,7 @@ const Header = () => {
         if (isAdmin) {
             return [
                 { path: '/admin', icon: Shield, label: isRtl ? 'لوحة التحكم' : 'Dashboard' },
+                { path: '/notifications', icon: Bell, label: isRtl ? 'الإشعارات' : 'Notifications' },
             ]
         }
         if (isDoctor) {

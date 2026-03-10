@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label'
 import api from '@/lib/axios'
 import { toast } from 'sonner'
-import { User, Stethoscope, Mail, Lock, Upload, ChevronDown, UserPlus } from 'lucide-react'
+import { User, Stethoscope, Mail, Lock, Upload, ChevronDown, UserPlus, X } from 'lucide-react'
+import { MEDICAL_SPECIALTIES } from '@/constants/specialties'
 
 const RegisterPage = () => {
     const { t, i18n } = useTranslation()
@@ -157,18 +158,32 @@ const RegisterPage = () => {
                                 <div className="space-y-1.5">
                                     <Label className="text-sm font-medium">{t('register.firstName')}</Label>
                                     <Input
-                                        {...register('first_name', { required: true })}
-                                        className="h-11 rounded-lg border-muted focus:border-blue-500 transition-colors"
+                                        {...register('first_name', {
+                                            required: isRtl ? 'هذا الحقل مطلوب' : 'This field is required',
+                                            pattern: {
+                                                value: /^([\u0600-\u06FF\s]+|[a-zA-Z\s]+)$/,
+                                                message: isRtl ? 'أحرف عربية فقط أو إنجليزية فقط' : 'Only Arabic or English letters'
+                                            }
+                                        })}
+                                        className={`h-11 rounded-lg border-muted focus:border-blue-500 transition-colors ${errors.first_name ? 'border-red-500 focus:border-red-500' : ''}`}
                                         placeholder={isRtl ? 'أحمد' : 'John'}
                                     />
+                                    {errors.first_name && <p className="text-xs text-red-500 mt-1">{errors.first_name.message}</p>}
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label className="text-sm font-medium">{t('register.lastName')}</Label>
                                     <Input
-                                        {...register('last_name', { required: true })}
-                                        className="h-11 rounded-lg border-muted focus:border-blue-500 transition-colors"
+                                        {...register('last_name', {
+                                            required: isRtl ? 'هذا الحقل مطلوب' : 'This field is required',
+                                            pattern: {
+                                                value: /^([\u0600-\u06FF\s]+|[a-zA-Z\s]+)$/,
+                                                message: isRtl ? 'أحرف عربية فقط أو إنجليزية فقط' : 'Only Arabic or English letters'
+                                            }
+                                        })}
+                                        className={`h-11 rounded-lg border-muted focus:border-blue-500 transition-colors ${errors.last_name ? 'border-red-500 focus:border-red-500' : ''}`}
                                         placeholder={isRtl ? 'محمد' : 'Doe'}
                                     />
+                                    {errors.last_name && <p className="text-xs text-red-500 mt-1">{errors.last_name.message}</p>}
                                 </div>
                             </div>
 
@@ -237,17 +252,11 @@ const RegisterPage = () => {
                                                 className="flex h-11 w-full rounded-lg border border-muted bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none cursor-pointer transition-colors"
                                             >
                                                 <option value="">{t('register.selectSpecialty')}</option>
-                                                <option value="General">{t('register.generalPractice')}</option>
-                                                <option value="Cardiology">{t('register.cardiology')}</option>
-                                                <option value="Dermatology">{t('register.dermatology')}</option>
-                                                <option value="Pediatrics">{t('register.pediatrics')}</option>
-                                                <option value="Neurology">{t('register.neurology')}</option>
-                                                <option value="Orthopedics">{t('register.orthopedics')}</option>
-                                                <option value="Psychiatry">{t('register.psychiatry')}</option>
-                                                <option value="Dentistry">{t('register.dentistry')}</option>
-                                                <option value="Gynecology">{t('register.gynecology')}</option>
-                                                <option value="Ophthalmology">{t('register.ophthalmology')}</option>
-                                                <option value="Other">{t('register.other')}</option>
+                                                {MEDICAL_SPECIALTIES.map((spec) => (
+                                                    <option key={spec.value} value={spec.value}>
+                                                        {isRtl ? spec.labelAr : spec.labelEn}
+                                                    </option>
+                                                ))}
                                             </select>
                                             <ChevronDown className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none ${isRtl ? 'left-3' : 'right-3'}`} />
                                         </div>
@@ -256,7 +265,7 @@ const RegisterPage = () => {
                                     <div className="space-y-1.5">
                                         <Label className="text-sm font-medium">{t('register.licenseUpload')}</Label>
                                         <div className="relative">
-                                            <div className="flex items-center gap-3 p-3 rounded-lg border border-dashed border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/20 hover:border-blue-400 transition-colors cursor-pointer">
+                                            <div className="flex items-center gap-3 p-3 rounded-lg border border-dashed border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/20 hover:border-blue-400 transition-colors relative">
                                                 <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
                                                     <Upload className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                                 </div>
@@ -265,9 +274,23 @@ const RegisterPage = () => {
                                                         type="file"
                                                         accept="image/*"
                                                         {...register('license_image', { required: true })}
-                                                        className="border-0 p-0 h-auto bg-transparent shadow-none focus-visible:ring-0 text-sm cursor-pointer"
+                                                        className={`border-0 p-0 h-auto bg-transparent shadow-none focus-visible:ring-0 text-sm cursor-pointer w-full ${watch('license_image')?.[0] ? (isRtl ? 'pl-10' : 'pr-10') : ''}`}
                                                     />
                                                 </div>
+                                                {watch('license_image')?.[0] && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setValue('license_image', ''); // Clear the file
+                                                        }}
+                                                        className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'left-3' : 'right-3'} p-1.5 bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 rounded-full transition-colors`}
+                                                        title={isRtl ? "إزالة الصورة" : "Remove Image"}
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </button>
+                                                )}
                                             </div>
                                             <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
                                                 {t('register.licenseHint')}

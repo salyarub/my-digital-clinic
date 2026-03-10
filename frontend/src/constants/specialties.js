@@ -1,0 +1,26 @@
+export const MEDICAL_SPECIALTIES = [
+    { value: 'General Practice', labelEn: 'General Practice', labelAr: 'الطب العام' },
+    { value: 'Cardiology', labelEn: 'Cardiology', labelAr: 'أمراض القلب' },
+    { value: 'Dermatology', labelEn: 'Dermatology', labelAr: 'الأمراض الجلدية' },
+    { value: 'Pediatrics', labelEn: 'Pediatrics', labelAr: 'طب الأطفال' },
+    { value: 'Neurology', labelEn: 'Neurology', labelAr: 'طب الأعصاب' },
+    { value: 'Orthopedics', labelEn: 'Orthopedics', labelAr: 'جراحة العظام' },
+    { value: 'Psychiatry', labelEn: 'Psychiatry', labelAr: 'الطب النفسي' },
+    { value: 'Dentistry', labelEn: 'Dentistry', labelAr: 'طب الأسنان' },
+    { value: 'Gynecology', labelEn: 'Gynecology', labelAr: 'أمراض النساء والتوليد' },
+    { value: 'Ophthalmology', labelEn: 'Ophthalmology', labelAr: 'طب العيون' },
+    { value: 'ENT', labelEn: 'ENT (Ear, Nose, Throat)', labelAr: 'الأنف والأذن والحنجرة' },
+    { value: 'Internal Medicine', labelEn: 'Internal Medicine', labelAr: 'الطب الباطني' },
+    { value: 'General Surgery', labelEn: 'General Surgery', labelAr: 'الجراحة العامة' },
+    { value: 'Urology', labelEn: 'Urology', labelAr: 'جراحة المسالك البولية' },
+    { value: 'Endocrinology', labelEn: 'Endocrinology', labelAr: 'الغدد الصماء' },
+    { value: 'Gastroenterology', labelEn: 'Gastroenterology', labelAr: 'أمراض الجهاز الهضمي' },
+    { value: 'Pulmonology', labelEn: 'Pulmonology', labelAr: 'الأمراض الصدرية' },
+    { value: 'Rheumatology', labelEn: 'Rheumatology', labelAr: 'أمراض الروماتيزم' },
+    { value: 'Oncology', labelEn: 'Oncology', labelAr: 'علم الأورام' },
+    { value: 'Nephrology', labelEn: 'Nephrology', labelAr: 'أمراض الكلى' },
+    { value: 'Nutrition', labelEn: 'Nutrition', labelAr: 'التغذية' },
+    { value: 'Physiotherapy', labelEn: 'Physiotherapy', labelAr: 'العلاج الطبيعي' },
+]
+
+export const OTHER_SPECIALTY_VALUE = 'Other'

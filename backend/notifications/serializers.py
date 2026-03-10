@@ -87,3 +87,10 @@ class SecretaryNotificationSerializer(serializers.ModelSerializer):
                 return None
         return None
 
+class AdminNotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        from .models import AdminNotification
+        model = AdminNotification
+        fields = ['id', 'message', 'notification_type', 'is_read', 'read_at', 'created_at', 'related_object_id']
+        read_only_fields = ['id', 'created_at']
+

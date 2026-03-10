@@ -40,12 +40,11 @@ class TimeOff(models.Model):
     reason = models.CharField(max_length=255, blank=True)
     
     # Suggestion Configuration
-    class ExpiryDuration(models.TextChoices):
-        ONE_DAY = '1_DAY', '1 Day'
-        TWO_DAYS = '2_DAYS', '2 Days'
-        ONE_WEEK = '1_WEEK', '1 Week'
+    class ExpiryFraction(models.TextChoices):
+        QUARTER = 'QUARTER', 'Quarter (1/4)'
+        HALF = 'HALF', 'Half (1/2)'
     
-    suggestion_expiry = models.CharField(max_length=20, choices=ExpiryDuration.choices, default=ExpiryDuration.TWO_DAYS)
+    expiry_fraction = models.CharField(max_length=20, choices=ExpiryFraction.choices, default=ExpiryFraction.HALF)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -83,6 +82,9 @@ class ReschedulingRequest(models.Model):
     # Suggested Slots (JSON List of ISO timestamps)
     suggested_slots = models.JSONField(default=list) 
     
+    # Reserved booking IDs for suggested slots (JSON list of UUIDs)
+    reserved_bookings = models.JSONField(default=list, blank=True)
+    
     class Status(models.TextChoices):
         PENDING = 'PENDING', 'Pending'
         ACCEPTED = 'ACCEPTED', 'Accepted'
@@ -92,3 +94,4 @@ class ReschedulingRequest(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     expires_at = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
+

@@ -79,7 +79,7 @@ class DoctorSlotsView(views.APIView):
         
         availabilities = DoctorAvailability.objects.filter(doctor=doctor, is_available=True)
         
-        for day_offset in range(1, days_visible + 1):  # usage of dynamic visibility
+        for day_offset in range(0, days_visible + 1):  # usage of dynamic visibility - starting from 0 (today)
             check_date = today + timedelta(days=day_offset)
             day_of_week = check_date.weekday()
             # Convert python weekday (0=Mon) to our format (0=Sun)
@@ -117,8 +117,9 @@ class DoctorSlotsView(views.APIView):
                 while current_time + timedelta(minutes=avail.slot_duration) <= end_time:
                     slot_datetime = timezone.make_aware(current_time)
                     
-                    # Check booking cutoff
-                    if slot_datetime < cutoff_time:
+                    # Determine effective cutoff time: either the defined cutoff or at least the current time
+                    effective_cutoff = cutoff_time if doctor.is_booking_cutoff_active else timezone.now()
+                    if slot_datetime < effective_cutoff:
                         current_time += timedelta(minutes=avail.slot_duration)
                         continue
                     
@@ -326,6 +327,9 @@ class AuthenticatedRescheduleAcceptView(views.APIView):
             if req.expires_at < timezone.now():
                 req.status = ReschedulingRequest.Status.EXPIRED
                 req.save()
+                # Cancel all reserved bookings on expiry
+                self._cancel_reserved_bookings(req)
+                self._send_expiry_notification(req)
                 return Response({"error": "Expired", "error_ar": "انتهت صلاحية العرض"}, status=400)
             
             selected_slot = request.data.get('selected_slot')
@@ -336,39 +340,44 @@ class AuthenticatedRescheduleAcceptView(views.APIView):
             if selected_slot not in req.suggested_slots:
                 return Response({"error": "Invalid slot", "error_ar": "موعد غير صالح"}, status=400)
             
-            # Comprehensive slot validation with race condition prevention
-            from datetime import datetime
             from django.db import transaction
-            from clinic.booking_validation import BookingValidator
             
-            slot_datetime = datetime.fromisoformat(selected_slot.replace('Z', '+00:00'))
-            
-            # Use atomic transaction with locking
             with transaction.atomic():
-                # Check slot availability with capacity
-                is_valid, error = BookingValidator.validate_slot_availability(req.doctor, slot_datetime)
-                if not is_valid:
-                    return Response({
-                        "error": "Slot no longer available", 
-                        "error_ar": error
-                    }, status=400)
+                # Find the reserved booking for the selected slot and CONFIRM it
+                selected_booking = None
+                for booking_id_str in req.reserved_bookings:
+                    try:
+                        reserved_booking = Booking.objects.get(id=booking_id_str)
+                        if reserved_booking.booking_datetime.isoformat() == selected_slot or str(reserved_booking.booking_datetime) == selected_slot:
+                            reserved_booking.status = Booking.Status.CONFIRMED
+                            reserved_booking.notes = ''
+                            reserved_booking.save()
+                            selected_booking = reserved_booking
+                        else:
+                            # Cancel the other reserved bookings
+                            reserved_booking.status = Booking.Status.CANCELLED
+                            reserved_booking.cancellation_reason = 'تم اختيار موعد بديل آخر'
+                            reserved_booking.save()
+                    except Booking.DoesNotExist:
+                        pass
                 
-                # Create new booking (auto-confirmed since patient chose it)
-                new_booking = Booking.objects.create(
-                    doctor=req.doctor,
-                    patient=req.patient,
-                    booking_datetime=selected_slot,
-                    status=Booking.Status.CONFIRMED,
-                )
+                # If no reserved booking found for the slot, create a new one
+                if not selected_booking:
+                    selected_booking = Booking.objects.create(
+                        doctor=req.doctor,
+                        patient=req.patient,
+                        booking_datetime=selected_slot,
+                        status=Booking.Status.CONFIRMED,
+                    )
             
             # Update reschedule request
             req.status = ReschedulingRequest.Status.ACCEPTED
-            req.new_booking = new_booking
+            req.new_booking = selected_booking
             req.save()
             
             # Link original booking
             if req.original_booking:
-                req.original_booking.rescheduled_from = new_booking
+                req.original_booking.rescheduled_from = selected_booking
                 req.original_booking.save()
             
             # Send confirmation notification
@@ -381,21 +390,20 @@ class AuthenticatedRescheduleAcceptView(views.APIView):
                 formatted_time = slot_dt.strftime('%H:%M')
                 
                 message_ar = f'تم تحويل حجزك بنجاح! موعدك الجديد: {formatted_date} الساعة {formatted_time} مع د. {req.doctor.user.first_name} {req.doctor.user.last_name}'
-                message_en = f'Your appointment has been rescheduled! New appointment: {formatted_date} at {formatted_time} with Dr. {req.doctor.user.first_name} {req.doctor.user.last_name}'
                 
                 create_notification(
                     'patient',
                     req.patient,
                     'BOOKING_CONFIRMED',
-                    message_ar,  # Use Arabic as primary
-                    related_object_id=new_booking.id
+                    message_ar,
+                    related_object_id=selected_booking.id
                 )
             except Exception as e:
                 print(f"Failed to send confirmation notification: {e}")
             
             return Response({
                 "status": "success",
-                "new_booking_id": str(new_booking.id),
+                "new_booking_id": str(selected_booking.id),
                 "message": "تم تحويل حجزك بنجاح",
                 "new_datetime": selected_slot
             })
@@ -418,10 +426,40 @@ class AuthenticatedRescheduleAcceptView(views.APIView):
             req.status = ReschedulingRequest.Status.REJECTED
             req.save()
             
+            # Cancel all reserved bookings
+            self._cancel_reserved_bookings(req)
+            
             return Response({"status": "rejected"})
             
         except ReschedulingRequest.DoesNotExist:
             return Response({"error": "Not found"}, status=404)
+    
+    def _cancel_reserved_bookings(self, req):
+        """Cancel all reserved PENDING bookings for a rescheduling request"""
+        for booking_id_str in req.reserved_bookings:
+            try:
+                reserved_booking = Booking.objects.get(id=booking_id_str)
+                if reserved_booking.status == Booking.Status.PENDING:
+                    reserved_booking.status = Booking.Status.CANCELLED
+                    reserved_booking.cancellation_reason = 'انتهت صلاحية المواعيد البديلة'
+                    reserved_booking.save()
+            except Booking.DoesNotExist:
+                pass
+    
+    def _send_expiry_notification(self, req):
+        """Send expiry notification to patient"""
+        try:
+            from notifications.views import create_notification
+            message = f'انتهت صلاحية المواعيد البديلة لموعدك الملغى مع د. {req.doctor.user.first_name} {req.doctor.user.last_name}. يرجى حجز موعد جديد.'
+            create_notification(
+                'patient',
+                req.patient,
+                'RESCHEDULE_EXPIRED',
+                message,
+                related_object_id=req.id
+            )
+        except Exception as e:
+            print(f"Failed to send expiry notification: {e}")
 
 
 class DaySlotsView(views.APIView):

@@ -31,7 +31,7 @@ const SecretarySchedulePage = () => {
         start_date: new Date(),
         end_date: new Date(),
         reason: '',
-        suggestion_expiry: '2_DAYS'
+        expiry_fraction: 'HALF'
     })
 
     // Fetch current user with permissions
@@ -343,71 +343,73 @@ const SecretarySchedulePage = () => {
                 </Card>
 
                 {/* Calendar Grid - Same as doctor */}
-                <div className="grid gap-2 grid-cols-7">
-                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
-                        <div key={day} className="text-center text-sm font-bold text-muted-foreground py-3 bg-gradient-to-b from-muted/50 to-transparent rounded-t-lg">
-                            {isRtl ? ['أحد', 'إثن', 'ثلا', 'أرب', 'خمي', 'جمع', 'سبت'][i] : day}
-                        </div>
-                    ))}
+                <div className="overflow-x-auto pb-4">
+                    <div className="min-w-[600px] grid gap-2 grid-cols-7">
+                        {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, i) => (
+                            <div key={day} className="text-center text-sm font-bold text-muted-foreground py-3 bg-gradient-to-b from-muted/50 to-transparent rounded-t-lg">
+                                {isRtl ? ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'][i] : day}
+                            </div>
+                        ))}
 
-                    {dateRange.map(date => {
-                        const dayBookings = getBookingsForDate(date)
-                        const activeCount = dayBookings.filter(b => b.status !== 'CANCELLED').length
-                        const isSelected = isSameDay(date, selectedDate)
-                        const isPast = isBefore(date, new Date()) && !isToday(date)
-                        const dayCapacity = getCapacityForDate(date)
-                        const isWorkingDay = dayCapacity > 0
-                        const isFull = isWorkingDay && activeCount >= dayCapacity
+                        {dateRange.map(date => {
+                            const dayBookings = getBookingsForDate(date)
+                            const activeCount = dayBookings.filter(b => b.status !== 'CANCELLED').length
+                            const isSelected = isSameDay(date, selectedDate)
+                            const isPast = isBefore(date, new Date()) && !isToday(date)
+                            const dayCapacity = getCapacityForDate(date)
+                            const isWorkingDay = dayCapacity > 0
+                            const isFull = isWorkingDay && activeCount >= dayCapacity
 
-                        return (
-                            <div
-                                key={date.toISOString()}
-                                onClick={() => setSelectedDate(date)}
-                                className={`
+                            return (
+                                <div
+                                    key={date.toISOString()}
+                                    onClick={() => setSelectedDate(date)}
+                                    className={`
                                     min-h-[90px] p-3 rounded-xl border-2 cursor-pointer transition-all duration-300 relative overflow-hidden
                                     ${isSelected ? 'ring-2 ring-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/50 dark:to-pink-950/50 border-purple-200 dark:border-purple-800 shadow-lg scale-105' : 'hover:bg-blue-50/50 dark:hover:bg-blue-950/30 hover:border-blue-200 dark:hover:border-blue-800 border-border'}
                                     ${isToday(date) ? 'border-blue-400 bg-blue-50/50 dark:bg-blue-950/30' : ''}
                                     ${isPast ? 'opacity-50' : ''}
                                     ${!isWorkingDay ? 'bg-muted/50' : ''}
                                 `}
-                            >
-                                {isToday(date) && (
-                                    <div className="absolute top-1 right-1">
-                                        <Sparkles className="h-3 w-3 text-blue-500 animate-pulse" />
-                                    </div>
-                                )}
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className={`text-lg font-bold ${isToday(date) ? 'text-blue-600 dark:text-blue-400' : isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-foreground'}`}>
-                                        {format(date, 'd')}
-                                    </span>
-                                    {!isWorkingDay && (
-                                        <Badge className="text-[10px] px-1.5 py-0 bg-gray-400 text-white">
-                                            {isRtl ? 'عطلة' : 'Off'}
-                                        </Badge>
+                                >
+                                    {isToday(date) && (
+                                        <div className="absolute top-1 right-1">
+                                            <Sparkles className="h-3 w-3 text-blue-500 animate-pulse" />
+                                        </div>
                                     )}
-                                    {isFull && !allowOverbooking && (
-                                        <Badge className="text-[10px] px-1.5 py-0 bg-red-500 text-white">
-                                            {isRtl ? 'ممتلئ' : 'Full'}
-                                        </Badge>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className={`text-lg font-bold ${isToday(date) ? 'text-blue-600 dark:text-blue-400' : isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-foreground'}`}>
+                                            {format(date, 'd')}
+                                        </span>
+                                        {!isWorkingDay && (
+                                            <Badge className="text-[10px] px-1.5 py-0 bg-gray-400 text-white">
+                                                {isRtl ? 'عطلة' : 'Off'}
+                                            </Badge>
+                                        )}
+                                        {isFull && !allowOverbooking && (
+                                            <Badge className="text-[10px] px-1.5 py-0 bg-red-500 text-white">
+                                                {isRtl ? 'ممتلئ' : 'Full'}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    {activeCount > 0 && (
+                                        <div className="space-y-1">
+                                            <div className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                                                <Users className="h-3 w-3" />
+                                                {activeCount}
+                                            </div>
+                                            <div className="flex gap-1 flex-wrap">
+                                                {dayBookings.slice(0, 3).map(b => (
+                                                    <div key={b.id} className={`w-2 h-2 rounded-full ${getStatusColor(b.status).split(' ')[0]}`} />
+                                                ))}
+                                                {dayBookings.length > 3 && <span className="text-[10px] text-muted-foreground">+{dayBookings.length - 3}</span>}
+                                            </div>
+                                        </div>
                                     )}
                                 </div>
-                                {activeCount > 0 && (
-                                    <div className="space-y-1">
-                                        <div className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                                            <Users className="h-3 w-3" />
-                                            {activeCount}
-                                        </div>
-                                        <div className="flex gap-1 flex-wrap">
-                                            {dayBookings.slice(0, 3).map(b => (
-                                                <div key={b.id} className={`w-2 h-2 rounded-full ${getStatusColor(b.status).split(' ')[0]}`} />
-                                            ))}
-                                            {dayBookings.length > 3 && <span className="text-[10px] text-muted-foreground">+{dayBookings.length - 3}</span>}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )
-                    })}
+                            )
+                        })}
+                    </div>
                 </div>
 
                 {/* Selected Day Details - Same as doctor with permission controls */}
@@ -446,20 +448,30 @@ const SecretarySchedulePage = () => {
                                 </div>
                                 {/* Digital Toggle - only if has manage_schedule permission */}
                                 {canManageSchedule && selectedDate >= new Date().setHours(0, 0, 0, 0) && selectedDateCapacity > 0 && (
-                                    <div className="flex items-center justify-center gap-2 mb-2">
-                                        <Label className="text-sm font-semibold text-gray-600 dark:text-gray-400">{isRtl ? 'الحجز الرقمي:' : 'Digital Booking:'}</Label>
-                                        <div
-                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer
-                                                ${leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd')) ? 'bg-gray-200' : 'bg-green-500'}
-                                            `}
-                                            onClick={() => {
-                                                const block = leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd'))
-                                                toggleDigitalBlockMutation.mutate({ date: selectedDate, isBlocked: !!block, blockId: block?.id })
-                                            }}
-                                        >
-                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform
-                                                ${leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd')) ? 'translate-x-1' : 'translate-x-6'}
-                                            `} />
+                                    <div className="flex items-center justify-center gap-3 mb-2 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-800 w-max mx-auto">
+                                        <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                            {isRtl ? 'الحجز الرقمي:' : 'Digital Booking:'}
+                                        </Label>
+                                        <div className="flex items-center gap-3" dir="ltr">
+                                            <span className={`text-xs font-bold ${leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd')) ? 'text-gray-500' : 'text-green-600'}`}>
+                                                {leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd'))
+                                                    ? (isRtl ? 'مغلق' : 'Closed')
+                                                    : (isRtl ? 'مفتوح' : 'Open')
+                                                }
+                                            </span>
+                                            <div
+                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer
+                                                    ${leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd')) ? 'bg-gray-300 dark:bg-gray-600' : 'bg-green-500'}
+                                                `}
+                                                onClick={() => {
+                                                    const block = leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd'))
+                                                    toggleDigitalBlockMutation.mutate({ date: selectedDate, isBlocked: !!block, blockId: block?.id })
+                                                }}
+                                            >
+                                                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform
+                                                    ${leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd')) ? 'translate-x-1' : 'translate-x-6'}
+                                                `} />
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -514,10 +526,13 @@ const SecretarySchedulePage = () => {
                                                     {booking.is_walkin && <Badge variant="outline" className="ml-2 text-xs bg-white/50">{isRtl ? 'حضوري' : 'Walk-in'}</Badge>}
                                                     {booking.is_overflow && <Badge className="ml-2 text-xs bg-amber-100 text-amber-700 border-amber-300">{isRtl ? 'إضافي' : 'Extra'}</Badge>}
                                                 </p>
-                                                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1 flex-wrap">
                                                     <Clock className="h-3 w-3" />
                                                     {format(new Date(booking.booking_datetime), 'HH:mm')}
                                                     <Badge className="text-xs">{getStatusLabel(booking.status)}</Badge>
+                                                    <Badge className={`text-xs ${booking.booking_type === 'FOLLOWUP' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-teal-100 text-teal-700 border-teal-200'}`}>
+                                                        {booking.booking_type === 'FOLLOWUP' ? (isRtl ? 'مراجعة' : 'Follow-up') : (isRtl ? 'زيارة جديدة' : 'New Visit')}
+                                                    </Badge>
                                                     {booking.number_of_people > 1 && (
                                                         <Badge className="text-xs bg-indigo-100 text-indigo-700 border-indigo-200">
                                                             {booking.number_of_people} {isRtl ? 'أشخاص' : 'people'}
@@ -668,35 +683,35 @@ const SecretarySchedulePage = () => {
             {/* Emergency Time Off Modal - Same as doctor, only if has permission */}
             {emergencyModal && canManageTimeOff && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in">
-                    <div className="bg-white rounded-3xl p-6 max-w-lg w-full mx-4 shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto border border-gray-100">
+                    <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 max-w-lg w-full mx-4 shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto border border-gray-100 dark:border-gray-800">
                         <div className="flex items-center gap-4 mb-6 border-b pb-4">
-                            <div className="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                            <div className="h-12 w-12 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center shrink-0">
                                 <AlertTriangle className="h-6 w-6 text-red-500" />
                             </div>
                             <div>
-                                <h3 className="text-xl font-bold text-gray-900">{isRtl ? 'تسجيل إجازة طارئة' : 'Emergency Time Off'}</h3>
-                                <p className="text-sm text-gray-500">{isRtl ? 'إدارة الغياب المفاجئ وإعادة الجدولة' : 'Manage unexpected absence & rescheduling'}</p>
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{isRtl ? 'تسجيل إجازة طارئة' : 'Emergency Time Off'}</h3>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{isRtl ? 'إدارة الغياب المفاجئ وإعادة الجدولة' : 'Manage unexpected absence & rescheduling'}</p>
                             </div>
                         </div>
 
                         <div className="space-y-6">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-semibold uppercase text-gray-500 tracking-wider ml-1">{isRtl ? 'من' : 'From'}</Label>
-                                    <Input type="date" className="pl-3 pr-3 h-11 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+                                    <Label className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wider ml-1">{isRtl ? 'من' : 'From'}</Label>
+                                    <Input type="date" className="pl-3 pr-3 h-11 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-700 transition-colors dark:text-white"
                                         value={format(emergencyData.start_date, 'yyyy-MM-dd')}
                                         onChange={e => setEmergencyData({ ...emergencyData, start_date: new Date(e.target.value) })} />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-semibold uppercase text-gray-500 tracking-wider ml-1">{isRtl ? 'إلى' : 'To'}</Label>
-                                    <Input type="date" className="pl-3 pr-3 h-11 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+                                    <Label className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wider ml-1">{isRtl ? 'إلى' : 'To'}</Label>
+                                    <Input type="date" className="pl-3 pr-3 h-11 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-700 transition-colors dark:text-white"
                                         value={format(emergencyData.end_date, 'yyyy-MM-dd')}
                                         onChange={e => setEmergencyData({ ...emergencyData, end_date: new Date(e.target.value) })} />
                                 </div>
                             </div>
 
                             <div className="space-y-3">
-                                <Label className="text-sm font-semibold text-gray-900">{isRtl ? 'سبب الغياب' : 'Reason for Absence'}</Label>
+                                <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100">{isRtl ? 'سبب الغياب' : 'Reason for Absence'}</Label>
                                 <div className="flex flex-wrap gap-2 mb-2">
                                     {[
                                         { id: 'sick', label_ar: 'ظرف صحي', label_en: 'Health Issue' },
@@ -706,28 +721,69 @@ const SecretarySchedulePage = () => {
                                     ].map(reason => (
                                         <button key={reason.id}
                                             onClick={() => setEmergencyData({ ...emergencyData, reason: isRtl ? reason.label_ar : reason.label_en })}
-                                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border ${emergencyData.reason === (isRtl ? reason.label_ar : reason.label_en) ? 'bg-gray-900 text-white border-gray-900 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'}`}
+                                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border ${emergencyData.reason === (isRtl ? reason.label_ar : reason.label_en) ? 'bg-gray-900 text-white border-gray-900 shadow-md' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:bg-gray-700'}`}
                                         >
                                             {isRtl ? reason.label_ar : reason.label_en}
                                         </button>
                                     ))}
                                 </div>
-                                <Input className="h-11 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+                                <Input className="h-11 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-700 transition-colors dark:text-white"
                                     placeholder={isRtl ? 'سبب آخر...' : 'Other reason...'}
                                     value={emergencyData.reason}
                                     onChange={e => setEmergencyData({ ...emergencyData, reason: e.target.value })} />
                             </div>
 
-                            <div className="flex gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100 items-start">
-                                <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                                <p className="text-xs leading-relaxed text-amber-800 font-medium">
+                            {/* Expiry Fraction Selector */}
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100">{isRtl ? 'مهلة الرد على البدائل' : 'Response Deadline'}</Label>
+                                    <span className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/40 px-2 py-1 rounded-full">
+                                        {isRtl ? 'حسب الموعد' : 'Dynamic'}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {[
+                                        { id: 'QUARTER', label: isRtl ? 'ربع المدة' : 'Quarter', sub: isRtl ? 'أسرع' : 'Faster', desc: '1/4' },
+                                        { id: 'HALF', label: isRtl ? 'نصف المدة' : 'Half', sub: isRtl ? 'أكثر مرونة' : 'Flexible', desc: '1/2' }
+                                    ].map(opt => (
+                                        <button
+                                            key={opt.id}
+                                            onClick={() => setEmergencyData({ ...emergencyData, expiry_fraction: opt.id })}
+                                            className={`
+                                            relative p-4 rounded-xl border-2 text-center transition-all duration-200
+                                            ${emergencyData.expiry_fraction === opt.id
+                                                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm'
+                                                    : 'border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:border-gray-200 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                                }
+                                        `}
+                                        >
+                                            <div className="text-2xl font-bold mb-1">{opt.desc}</div>
+                                            <div className="font-semibold text-sm">{opt.label}</div>
+                                            <div className="text-[10px] uppercase tracking-wide opacity-70 font-semibold mt-1">{opt.sub}</div>
+                                            {emergencyData.expiry_fraction === opt.id && (
+                                                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-500"></div>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    {isRtl
+                                        ? 'المهلة تُحسب كنسبة من الوقت بين الآن وأقرب موعد بديل'
+                                        : 'Deadline is calculated as a fraction of time between now and the earliest alternative slot'
+                                    }
+                                </p>
+                            </div>
+
+                            <div className="flex gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800 items-start">
+                                <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                                <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300 font-medium">
                                     {isRtl ? 'سيتم إلغاء جميع المواعيد في هذه الفترة الحالية.' : 'All current bookings in this range will be cancelled.'}
                                 </p>
                             </div>
                         </div>
 
                         <div className="flex gap-3 mt-8 pt-4 border-t">
-                            <Button className="flex-1 bg-gray-900 hover:bg-gray-800 text-white h-12 text-base shadow-lg rounded-xl"
+                            <Button className="flex-1 bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-gray-200 text-white dark:text-gray-900 h-12 text-base shadow-lg rounded-xl"
                                 onClick={() => emergencyMutation.mutate({
                                     ...emergencyData,
                                     start_date: format(emergencyData.start_date, 'yyyy-MM-dd'),
@@ -737,7 +793,7 @@ const SecretarySchedulePage = () => {
                             >
                                 {emergencyMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : (isRtl ? 'تأكيد الإجراء' : 'Confirm Action')}
                             </Button>
-                            <Button variant="ghost" className="h-12 px-6 rounded-xl hover:bg-gray-100 text-gray-600" onClick={() => setEmergencyModal(false)}>
+                            <Button variant="ghost" className="h-12 px-6 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400" onClick={() => setEmergencyModal(false)}>
                                 {isRtl ? 'إلغاء' : 'Cancel'}
                             </Button>
                         </div>

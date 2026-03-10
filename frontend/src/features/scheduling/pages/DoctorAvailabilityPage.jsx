@@ -35,9 +35,20 @@ const DoctorAvailabilityPage = () => {
 
     const [scheduleState, setScheduleState] = useState([])
     const [hasChanges, setHasChanges] = useState(false)
+    const [globalSlotDuration, setGlobalSlotDuration] = useState(30)
+    const [globalMaxPatients, setGlobalMaxPatients] = useState(1)
 
     useEffect(() => {
         if (availabilities) {
+            let initialSlotDuration = 30;
+            let initialMaxPatients = 1;
+            if (availabilities.length > 0) {
+                initialSlotDuration = availabilities[0].slot_duration || 30;
+                initialMaxPatients = availabilities[0].max_patients_per_slot || 1;
+                setGlobalSlotDuration(initialSlotDuration);
+                setGlobalMaxPatients(initialMaxPatients);
+            }
+
             const newState = DAYS.map(day => {
                 const existing = availabilities.find(a => a.day_of_week === day.value)
                 if (existing) {
@@ -47,8 +58,8 @@ const DoctorAvailabilityPage = () => {
                         is_available: existing.is_available,
                         start_time: existing.start_time?.slice(0, 5) || '09:00',
                         end_time: existing.end_time?.slice(0, 5) || '17:00',
-                        max_patients_per_slot: existing.max_patients_per_slot || 1,
-                        slot_duration: existing.slot_duration || 30
+                        max_patients_per_slot: initialMaxPatients,
+                        slot_duration: initialSlotDuration
                     }
                 }
                 return {
@@ -56,13 +67,25 @@ const DoctorAvailabilityPage = () => {
                     is_available: false,
                     start_time: '09:00',
                     end_time: '17:00',
-                    max_patients_per_slot: 1,
-                    slot_duration: 30
+                    max_patients_per_slot: initialMaxPatients,
+                    slot_duration: initialSlotDuration
                 }
             })
             setScheduleState(newState)
         }
     }, [availabilities])
+
+    const handleGlobalSlotDurationChange = (val) => {
+        setGlobalSlotDuration(val)
+        setScheduleState(prev => prev.map(item => ({ ...item, slot_duration: val })))
+        setHasChanges(true)
+    }
+
+    const handleGlobalMaxPatientsChange = (val) => {
+        setGlobalMaxPatients(val)
+        setScheduleState(prev => prev.map(item => ({ ...item, max_patients_per_slot: val })))
+        setHasChanges(true)
+    }
 
     const saveMutation = useMutation({
         mutationFn: async () => {
@@ -84,7 +107,25 @@ const DoctorAvailabilityPage = () => {
     const updateDay = (dayValue, field, value) => {
         setScheduleState(prev => prev.map(item => {
             if (item.day_of_week === dayValue) {
-                return { ...item, [field]: value }
+                const updatedItem = { ...item, [field]: value };
+
+                // Add validation: Ensure end_time is logically after start_time
+                if (field === 'start_time' || field === 'end_time') {
+                    const [startH, startM] = updatedItem.start_time.split(':').map(Number);
+                    const [endH, endM] = updatedItem.end_time.split(':').map(Number);
+
+                    const startTotal = startH * 60 + startM;
+                    const endTotal = endH * 60 + endM;
+
+                    // If they put end time <= start time, prevent the change or adjust
+                    if (endTotal <= startTotal) {
+                        toast.error(isRtl ? 'يجب أن يكون وقت الانتهاء بعد وقت البدء' : 'End time must be after start time');
+                        // Reject the invalid change, keeping the old state
+                        return item;
+                    }
+                }
+
+                return updatedItem
             }
             return item
         }))
@@ -118,24 +159,53 @@ const DoctorAvailabilityPage = () => {
                 <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-cyan-600 to-teal-600 p-8 text-white shadow-2xl">
                     <div className="absolute top-0 right-0 -mt-4 -mr-4 h-32 w-32 rounded-full bg-white/10 blur-3xl"></div>
                     <div className="absolute bottom-0 left-0 -mb-4 -ml-4 h-32 w-32 rounded-full bg-white/10 blur-3xl"></div>
-                    <div className="relative flex items-center justify-between">
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-3">
+                    <div className="relative flex flex-col lg:flex-row items-center justify-between gap-6">
+                        <div className="space-y-2 text-center lg:text-start flex-shrink-0">
+                            <div className="flex items-center justify-center lg:justify-start gap-3">
                                 <Calendar className="h-10 w-10" />
                                 <h1 className="text-4xl font-bold">
                                     {isRtl ? 'أوقات الدوام' : 'Working Hours'}
                                 </h1>
                             </div>
                             <p className="text-blue-100 text-lg">
-                                {isRtl ? 'حدد أيام وساعات عملك وعدد المرضى لكل فترة' : 'Set your working days, hours, and patient capacity'}
+                                {isRtl ? 'حدد أيام وساعات عملك' : 'Set your working days and hours'}
                             </p>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-center gap-6 bg-white/10 p-4 rounded-xl backdrop-blur-sm border border-white/20">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-semibold text-blue-50 flex items-center justify-center sm:justify-start gap-2">
+                                    {isRtl ? 'مدة الجلسة (دقيقة)' : 'Slot Duration (min)'}
+                                </Label>
+                                <Input
+                                    type="number"
+                                    min="5"
+                                    step="5"
+                                    value={globalSlotDuration}
+                                    onChange={(e) => handleGlobalSlotDurationChange(parseInt(e.target.value) || 5)}
+                                    className="w-full sm:w-32 bg-white/20 border-white/30 text-white placeholder:text-white/50 focus:ring-white focus:border-white font-semibold text-center"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-semibold text-blue-50 flex items-center justify-center sm:justify-start gap-2">
+                                    <Users className="h-4 w-4" />
+                                    {isRtl ? 'عدد المرضى/جلسة' : 'Patients/Slot'}
+                                </Label>
+                                <Input
+                                    type="number"
+                                    min="1"
+                                    value={globalMaxPatients}
+                                    onChange={(e) => handleGlobalMaxPatientsChange(parseInt(e.target.value) || 1)}
+                                    className="w-full sm:w-32 bg-white/20 border-white/30 text-white placeholder:text-white/50 focus:ring-white focus:border-white font-bold text-center"
+                                />
+                            </div>
                         </div>
 
                         <Button
                             onClick={() => saveMutation.mutate()}
                             disabled={!hasChanges || saveMutation.isPending}
                             size="lg"
-                            className={`gap-2 bg-white text-blue-600 hover:bg-blue-50 shadow-lg ${hasChanges ? 'animate-pulse' : ''}`}
+                            className={`w-full lg:w-auto gap-2 bg-white text-blue-600 hover:bg-blue-50 shadow-lg whitespace-nowrap flex-shrink-0 ${hasChanges ? 'animate-pulse' : ''}`}
                         >
                             {saveMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
                             <span className="font-semibold">{isRtl ? 'حفظ التغييرات' : 'Save Changes'}</span>
@@ -173,7 +243,7 @@ const DoctorAvailabilityPage = () => {
                                         {/* Settings */}
                                         <div className="flex-1 p-6 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
                                             {isActive ? (
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                                <div className="grid grid-cols-2 gap-4">
                                                     <div className="space-y-2">
                                                         <Label className="text-xs font-semibold text-gray-600 dark:text-gray-400 flex items-center gap-2">
                                                             <Clock className="h-3 w-3" />
@@ -183,7 +253,7 @@ const DoctorAvailabilityPage = () => {
                                                             type="time"
                                                             value={config.start_time}
                                                             onChange={(e) => updateDay(day.value, 'start_time', e.target.value)}
-                                                            className="border-2 focus:ring-2 focus:ring-blue-400"
+                                                            className="border-2 focus:ring-2 focus:ring-blue-400 text-center"
                                                         />
                                                     </div>
                                                     <div className="space-y-2">
@@ -195,36 +265,8 @@ const DoctorAvailabilityPage = () => {
                                                             type="time"
                                                             value={config.end_time}
                                                             onChange={(e) => updateDay(day.value, 'end_time', e.target.value)}
-                                                            className="border-2 focus:ring-2 focus:ring-blue-400"
+                                                            className="border-2 focus:ring-2 focus:ring-blue-400 text-center"
                                                         />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label className="text-xs font-semibold text-gray-600 dark:text-gray-400">
-                                                            {isRtl ? 'مدة الجلسة (دقيقة)' : 'Slot Duration (min)'}
-                                                        </Label>
-                                                        <Input
-                                                            type="number"
-                                                            min="5"
-                                                            step="5"
-                                                            value={config.slot_duration}
-                                                            onChange={(e) => updateDay(day.value, 'slot_duration', parseInt(e.target.value))}
-                                                            className="text-center border-2 focus:ring-2 focus:ring-blue-400 font-semibold"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label className="text-xs font-semibold text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                                                            <Users className="h-3 w-3" />
-                                                            {isRtl ? 'عدد المرضى/جلسة' : 'Patients/Slot'}
-                                                        </Label>
-                                                        <div className="relative">
-                                                            <Input
-                                                                type="number"
-                                                                min="1"
-                                                                value={config.max_patients_per_slot || 1}
-                                                                onChange={(e) => updateDay(day.value, 'max_patients_per_slot', parseInt(e.target.value))}
-                                                                className="text-center border-2 border-green-300 focus:ring-2 focus:ring-green-400 font-bold text-lg text-green-700"
-                                                            />
-                                                        </div>
                                                     </div>
                                                 </div>
                                             ) : (

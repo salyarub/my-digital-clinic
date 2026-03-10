@@ -19,7 +19,7 @@ class TimeOffSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimeOff
         fields = ['id', 'start_date', 'end_date', 'start_time', 'end_time', 
-                  'reason', 'suggestion_expiry', 'conflicting_bookings_count', 'status', 'type']
+                  'reason', 'expiry_fraction', 'conflicting_bookings_count', 'status', 'type']
         read_only_fields = ['conflicting_bookings_count', 'all_conflicts_handled']
 
 class ReschedulingRequestSerializer(serializers.ModelSerializer):
@@ -30,4 +30,5 @@ class ReschedulingRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReschedulingRequest
         fields = ['id', 'token', 'doctor_name', 'patient_name', 'suggested_slots', 
-                  'status', 'expires_at', 'original_booking_details']
+                  'reserved_bookings', 'status', 'expires_at', 'original_booking_details']
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -7,12 +7,20 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import api from '@/lib/axios'
 import { Search, Stethoscope, Star, Calendar, MapPin, DollarSign, Sparkles, Users } from 'lucide-react'
+import { MEDICAL_SPECIALTIES } from '@/constants/specialties'
 
 const PatientDashboard = () => {
     const { t, i18n } = useTranslation()
     const [searchTerm, setSearchTerm] = useState('')
     const [debouncedSearch, setDebouncedSearch] = useState('')
+    const [selectedSpecialty, setSelectedSpecialty] = useState('')
     const isRtl = i18n.language === 'ar'
+
+    const getTranslatedSpecialty = (specValue) => {
+        if (!specValue) return ''
+        const found = MEDICAL_SPECIALTIES.find(s => s.value === specValue)
+        return found ? (isRtl ? found.labelAr : found.labelEn) : specValue
+    }
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -22,16 +30,25 @@ const PatientDashboard = () => {
     }, [searchTerm])
 
     const { data: doctorsData, isLoading } = useQuery({
-        queryKey: ['doctors', debouncedSearch],
+        queryKey: ['doctors', debouncedSearch, selectedSpecialty],
         queryFn: async () => {
-            const params = debouncedSearch ? { search: debouncedSearch } : {}
+            const searchTerms = [selectedSpecialty, debouncedSearch].filter(Boolean).join(' ')
+            const params = searchTerms ? { search: searchTerms } : {}
             const res = await api.get('doctors/', { params })
             return res.data
         },
         placeholderData: keepPreviousData
     })
 
-    const filteredDoctors = doctorsData?.results || doctorsData || []
+    const allDoctors = doctorsData?.results || doctorsData || []
+
+    // Show only 6 random doctors when no search/filter active
+    const isSearching = debouncedSearch || selectedSpecialty
+    const displayDoctors = useMemo(() => {
+        if (isSearching || allDoctors.length <= 6) return allDoctors
+        const shuffled = [...allDoctors].sort(() => Math.random() - 0.5)
+        return shuffled.slice(0, 6)
+    }, [allDoctors, isSearching])
 
     // Color palette for doctor cards
     const cardColors = [
@@ -63,16 +80,35 @@ const PatientDashboard = () => {
                             {isRtl ? 'اختر طبيبك واحجز موعدك بسهولة وسرعة' : 'Choose your doctor and book an appointment easily'}
                         </p>
 
-                        {/* Search Bar */}
-                        <div className="max-w-xl mx-auto relative">
-                            <Search className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                            <Input
-                                type="text"
-                                placeholder={isRtl ? "ابحث بالاسم أو التخصص..." : "Search by name or specialty..."}
-                                className="ps-12 h-14 text-base rounded-2xl bg-background text-foreground shadow-xl border-0 focus-visible:ring-2 focus-visible:ring-white/30"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                        {/* Search Bar & Filters */}
+                        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row gap-3 relative">
+                            <div className="relative flex-1">
+                                <Search className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                <Input
+                                    type="text"
+                                    placeholder={isRtl ? "ابحث بالاسم..." : "Search by name..."}
+                                    className="ps-12 h-14 text-base rounded-2xl bg-background text-foreground shadow-xl border-0 focus-visible:ring-2 focus-visible:ring-white/30 w-full"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                            <div className="sm:w-1/3 relative">
+                                <select
+                                    value={selectedSpecialty}
+                                    onChange={(e) => setSelectedSpecialty(e.target.value)}
+                                    className="h-14 w-full rounded-2xl border-0 bg-background text-foreground shadow-xl px-4 appearance-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30 cursor-pointer text-base"
+                                >
+                                    <option value="">{isRtl ? 'التخصص (الكل)' : 'Specialty (All)'}</option>
+                                    {MEDICAL_SPECIALTIES.map((spec) => (
+                                        <option key={spec.value} value={spec.value}>
+                                            {isRtl ? spec.labelAr : spec.labelEn}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'left-4' : 'right-4'} pointer-events-none text-muted-foreground`}>
+                                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -81,9 +117,13 @@ const PatientDashboard = () => {
                 {!isLoading && (
                     <div className="flex items-center justify-between">
                         <p className="text-sm text-muted-foreground">
-                            {isRtl
-                                ? `${filteredDoctors.length} طبيب متاح`
-                                : `${filteredDoctors.length} doctors available`
+                            {isSearching
+                                ? (isRtl
+                                    ? `${displayDoctors.length} طبيب متاح`
+                                    : `${displayDoctors.length} doctors found`)
+                                : (isRtl
+                                    ? `عرض ${displayDoctors.length} من أصل ${allDoctors.length} طبيب`
+                                    : `Showing ${displayDoctors.length} of ${allDoctors.length} doctors`)
                             }
                         </p>
                     </div>
@@ -107,7 +147,7 @@ const PatientDashboard = () => {
                     </div>
                 ) : (
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {filteredDoctors.map((doctor, idx) => {
+                        {displayDoctors.map((doctor, idx) => {
                             const color = cardColors[idx % cardColors.length]
                             return (
                                 <div
@@ -133,7 +173,7 @@ const PatientDashboard = () => {
                                                 </h3>
                                                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${color.light} ${color.text}`}>
                                                     <Stethoscope className="h-3 w-3" />
-                                                    {doctor.specialty || (isRtl ? 'طب عام' : 'General')}
+                                                    {getTranslatedSpecialty(doctor.specialty) || (isRtl ? 'طب عام' : 'General')}
                                                 </span>
                                             </div>
                                         </div>
@@ -163,10 +203,10 @@ const PatientDashboard = () => {
 
                                             {/* Price */}
                                             <div className="flex items-center gap-1">
-                                                <DollarSign className="h-4 w-4 text-emerald-500" />
                                                 <span className="font-bold text-emerald-600 dark:text-emerald-400">
                                                     {doctor.consultation_price || '0'}
                                                 </span>
+                                                <span className="text-xs text-emerald-500 font-medium">{isRtl ? 'د.ع' : 'IQD'}</span>
                                             </div>
                                         </div>
 
@@ -193,7 +233,7 @@ const PatientDashboard = () => {
                 )}
 
                 {/* Empty State */}
-                {filteredDoctors.length === 0 && !isLoading && (
+                {displayDoctors.length === 0 && !isLoading && (
                     <div className="text-center py-16">
                         <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
                             <Search className="h-8 w-8 text-muted-foreground" />

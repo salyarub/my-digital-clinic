@@ -52,6 +52,9 @@ class Booking(models.Model):
     # Rescheduling Links
     rescheduled_from = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='rescheduled_to_booking')
 
+    # Email Reminder
+    reminder_sent = models.BooleanField(default=False)
+
     def __str__(self):
         return f"Booking {self.id} - {self.doctor} / {self.patient} ({self.status})"
 

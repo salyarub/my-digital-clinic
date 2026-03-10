@@ -128,90 +128,29 @@ const MapPicker = ({ latitude, longitude, onLocationSelect, readonly = false, is
     }
 
     return (
-        <div className="space-y-4">
-            {/* Map Display */}
-            <div
-                className={`relative rounded-xl overflow-hidden border cursor-pointer group ${readonly ? 'h-[200px]' : 'h-[180px]'}`}
-                onClick={openInGoogleMaps}
-            >
-                <iframe
-                    key={`${displayLat}-${displayLng}`}
-                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${displayLng - 0.003}%2C${displayLat - 0.003}%2C${displayLng + 0.003}%2C${displayLat + 0.003}&layer=mapnik&marker=${displayLat}%2C${displayLng}`}
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0, pointerEvents: 'none' }}
-                    loading="lazy"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 bg-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 transition-all">
-                        <ExternalLink className="h-4 w-4" />
-                        <span className="text-sm font-medium">{isRtl ? 'افتح في قوقل ماب' : 'Open in Google Maps'}</span>
-                    </div>
+        <div className="space-y-4 p-4">
+            <div className="space-y-2">
+                <Label className="flex items-center gap-2 text-sm font-medium">
+                    <Link className="h-4 w-4" />
+                    {isRtl ? 'الصق رابط قوقل ماب (قصير أو طويل):' : 'Paste Google Maps link (short or long):'}
+                </Label>
+                <div className="relative">
+                    <Input
+                        type="text"
+                        placeholder="https://maps.app.goo.gl/... أو https://google.com/maps/..."
+                        value={mapsLink}
+                        onChange={(e) => handleLinkPaste(e.target.value)}
+                        className={`text-sm pr-10 ${isExtracted ? 'border-green-500 bg-green-50' : ''}`}
+                        dir="ltr"
+                        disabled={isResolving}
+                    />
+                    {isResolving && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-primary" />}
+                    {isExtracted && !isResolving && <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />}
                 </div>
-                {(hasLocation || isExtracted) && (
-                    <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                        <Check className="h-3 w-3" />
-                        {isRtl ? 'محدد' : 'Set'}
-                    </div>
-                )}
+                <p className="text-xs text-muted-foreground text-center">
+                    {isRtl ? '💡 انسخ أي رابط من قوقل ماب والصقه هنا!' : '💡 Copy any Google Maps link and paste here!'}
+                </p>
             </div>
-
-            {/* Coordinates Display */}
-            {readonly && (
-                <div className="text-center text-xs text-muted-foreground bg-muted/50 rounded-lg py-2">
-                    📍 {displayLat.toFixed(6)}, {displayLng.toFixed(6)}
-                </div>
-            )}
-
-            {/* Controls */}
-            {!readonly && (
-                <div className="space-y-3">
-                    <div className="text-center text-xs text-muted-foreground bg-muted/50 rounded-lg py-2">
-                        📍 {displayLat.toFixed(6)}, {displayLng.toFixed(6)}
-                    </div>
-                    {/* GPS Button */}
-                    <Button
-                        type="button"
-                        variant="default"
-                        className="w-full gap-2 h-12"
-                        onClick={getCurrentLocation}
-                    >
-                        <Navigation className="h-5 w-5" />
-                        {isRtl ? '📍 استخدم موقعي الحالي' : '📍 Use My Current Location'}
-                    </Button>
-
-                    {/* Divider */}
-                    <div className="flex items-center gap-3">
-                        <div className="flex-1 h-px bg-border"></div>
-                        <span className="text-xs text-muted-foreground">{isRtl ? 'أو' : 'OR'}</span>
-                        <div className="flex-1 h-px bg-border"></div>
-                    </div>
-
-                    {/* Google Maps Link Input */}
-                    <div className="space-y-2">
-                        <Label className="flex items-center gap-2 text-sm font-medium">
-                            <Link className="h-4 w-4" />
-                            {isRtl ? 'الصق رابط قوقل ماب (قصير أو طويل):' : 'Paste Google Maps link (short or long):'}
-                        </Label>
-                        <div className="relative">
-                            <Input
-                                type="text"
-                                placeholder="https://maps.app.goo.gl/... أو https://google.com/maps/..."
-                                value={mapsLink}
-                                onChange={(e) => handleLinkPaste(e.target.value)}
-                                className={`text-sm pr-10 ${isExtracted ? 'border-green-500 bg-green-50' : ''}`}
-                                dir="ltr"
-                                disabled={isResolving}
-                            />
-                            {isResolving && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 animate-spin text-primary" />}
-                            {isExtracted && !isResolving && <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-green-500" />}
-                        </div>
-                        <p className="text-xs text-muted-foreground text-center">
-                            {isRtl ? '💡 انسخ أي رابط من قوقل ماب والصقه هنا!' : '💡 Copy any Google Maps link and paste here!'}
-                        </p>
-                    </div>
-                </div>
-            )}
         </div>
     )
 }

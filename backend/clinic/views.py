@@ -38,6 +38,17 @@ class BookingViewSet(viewsets.ModelViewSet):
             'patient', 'patient__user'
         ).order_by('-booking_datetime')
         
+        from django.utils import timezone
+        
+        # Lazy update: mark any pending/confirmed bookings from past days as NO_SHOW
+        today = timezone.now().date()
+        past_active_bookings = Booking.objects.filter(
+            booking_datetime__date__lt=today,
+            status__in=[Booking.Status.PENDING, Booking.Status.CONFIRMED, Booking.Status.IN_PROGRESS]
+        )
+        if past_active_bookings.exists():
+            past_active_bookings.update(status=Booking.Status.NO_SHOW)
+
         if user.role == User.Role.DOCTOR:
             return base_qs.filter(doctor__user=user)
         elif user.role == User.Role.PATIENT:
@@ -82,13 +93,25 @@ class BookingViewSet(viewsets.ModelViewSet):
             if number_of_people < 1 or number_of_people > 5:
                 raise ValidationError({'error': 'عدد الأشخاص يجب أن يكون بين 1 و 5'})
             
-            # Check for any active booking with this doctor (not cancelled/completed/expired/no-show)
+            # Lazy update first to ensure we don't block on yesterday's missed appointments
+            from django.utils import timezone
+            today = timezone.now().date()
+            past_active = Booking.objects.filter(
+                patient=patient,
+                booking_datetime__date__lt=today,
+                status__in=[Booking.Status.PENDING, Booking.Status.CONFIRMED, Booking.Status.IN_PROGRESS]
+            )
+            if past_active.exists():
+                past_active.update(status=Booking.Status.NO_SHOW)
+
+            # Check for any active booking with this doctor today or in the future
             # Patient can only have ONE active booking with a doctor at any time
             active_statuses = [Booking.Status.PENDING, Booking.Status.CONFIRMED, Booking.Status.IN_PROGRESS, 'RESCHEDULING_PENDING']
             existing_active = Booking.objects.filter(
                 patient=patient,
                 doctor=doctor,
-                status__in=active_statuses
+                status__in=active_statuses,
+                booking_datetime__date__gte=today
             ).exists()
             
             if existing_active:
@@ -134,7 +157,7 @@ class BookingViewSet(viewsets.ModelViewSet):
                     # Book as many people as possible in this slot
                     people_this_slot = min(remaining_people, available_in_slot)
                     
-                    initial_status = Booking.Status.CONFIRMED if doctor.auto_approve_bookings else Booking.Status.PENDING
+                    initial_status = Booking.Status.CONFIRMED
                     
                     booking = Booking.objects.create(
                         doctor=doctor,
@@ -168,7 +191,7 @@ class BookingViewSet(viewsets.ModelViewSet):
                 'doctor',
                 doctor,
                 'NEW_BOOKING',
-                f'طلب موعد جديد من {user.first_name} {user.last_name}{people_text} بتاريخ {main_booking.booking_datetime.strftime("%Y-%m-%d %H:%M")}{slots_text}',
+                f'تم حجز موعد من قبل {user.first_name} {user.last_name}{people_text} بتاريخ {main_booking.booking_datetime.strftime("%Y-%m-%d %H:%M")}{slots_text}',
                 related_object_id=main_booking.id
             )
             
@@ -391,6 +414,24 @@ class BookingViewSet(viewsets.ModelViewSet):
         non_cancellable = [Booking.Status.CANCELLED, Booking.Status.COMPLETED, Booking.Status.IN_PROGRESS]
         if booking.status in non_cancellable:
             return Response({'error': 'This booking cannot be cancelled'}, status=400)
+        
+        # ── Cancellation Policy: 24-hour lock with 10-minute grace period ──
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        now = timezone.now()
+        time_until_booking = booking.booking_datetime - now
+        time_since_creation = now - booking.created_at
+        grace_period = timedelta(minutes=10)
+        lock_threshold = timedelta(hours=24)
+        
+        # If booking is within 24 hours AND grace period (10 min) has passed → BLOCK
+        if time_until_booking <= lock_threshold and time_since_creation > grace_period:
+            return Response({
+                'error': 'لا يمكنك إلغاء الحجز قبل الموعد بأقل من 24 ساعة',
+                'error_en': 'Cannot cancel a booking less than 24 hours before the appointment',
+                'locked': True
+            }, status=400)
         
         booking.status = Booking.Status.CANCELLED
         booking.cancellation_reason = 'Cancelled by patient'

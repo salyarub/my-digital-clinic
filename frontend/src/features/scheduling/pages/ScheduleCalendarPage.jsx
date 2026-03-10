@@ -36,7 +36,7 @@ const ScheduleCalendarPage = () => {
         start_date: new Date(),
         end_date: new Date(),
         reason: '',
-        suggestion_expiry: '2_DAYS'
+        expiry_fraction: 'HALF'
     })
 
     const { data: doctorProfile, isLoading: profileLoading } = useQuery({
@@ -396,7 +396,7 @@ const ScheduleCalendarPage = () => {
                 {/* Calendar Grid */}
                 <div className="overflow-x-auto pb-4">
                     <div className="min-w-[600px] grid gap-2 grid-cols-7">
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
+                        {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, i) => (
                             <div key={day} className="text-center text-sm font-bold text-muted-foreground py-3 bg-gradient-to-b from-muted/50 to-transparent rounded-t-lg">
                                 {isRtl ? ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'][i] : day}
                             </div>
@@ -499,43 +499,45 @@ const ScheduleCalendarPage = () => {
                                 {/* Digital Booking Toggle for Empty State */}
                                 {selectedDate >= new Date().setHours(0, 0, 0, 0) && selectedDateCapacity > 0 &&
                                     !leaves?.find(l => l.type === 'ABSENCE' && l.status === 'ACTIVE' && l.start_date <= format(selectedDate, 'yyyy-MM-dd') && l.end_date >= format(selectedDate, 'yyyy-MM-dd')) && (
-                                        <div className="flex items-center justify-center gap-2 mb-2">
-                                            <Label className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+                                        <div className="flex items-center justify-center gap-3 mb-2 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-2xl border border-gray-100 dark:border-gray-800 w-max mx-auto">
+                                            <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                                                 {isRtl ? 'الحجز الرقمي:' : 'Digital Booking:'}
                                             </Label>
-                                            <div
-                                                className={`
-                                                        relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none cursor-pointer
-                                                        ${leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd'))
-                                                        ? 'bg-gray-200'
-                                                        : 'bg-green-500'
+                                            <div className="flex items-center gap-3" dir="ltr">
+                                                <span className={`text-xs font-bold ${leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd')) ? 'text-gray-500' : 'text-green-600'}`}>
+                                                    {leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd'))
+                                                        ? (isRtl ? 'مغلق' : 'Closed')
+                                                        : (isRtl ? 'مفتوح' : 'Open')
                                                     }
-                                                    `}
-                                                onClick={() => {
-                                                    const block = leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd'))
-                                                    toggleDigitalBlockMutation.mutate({
-                                                        date: selectedDate,
-                                                        isBlocked: !!block,
-                                                        blockId: block?.id
-                                                    })
-                                                }}
-                                            >
-                                                <span
+                                                </span>
+                                                <div
                                                     className={`
-                                                            inline-block h-4 w-4 transform rounded-full bg-white transition-transform
+                                                            relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none cursor-pointer
                                                             ${leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd'))
-                                                            ? 'translate-x-1'
-                                                            : 'translate-x-6'
+                                                            ? 'bg-gray-300 dark:bg-gray-600'
+                                                            : 'bg-green-500'
                                                         }
                                                         `}
-                                                />
+                                                    onClick={() => {
+                                                        const block = leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd'))
+                                                        toggleDigitalBlockMutation.mutate({
+                                                            date: selectedDate,
+                                                            isBlocked: !!block,
+                                                            blockId: block?.id
+                                                        })
+                                                    }}
+                                                >
+                                                    <span
+                                                        className={`
+                                                                inline-block h-4 w-4 transform rounded-full bg-white transition-transform
+                                                                ${leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd'))
+                                                                ? 'translate-x-1'
+                                                                : 'translate-x-6'
+                                                            }
+                                                            `}
+                                                    />
+                                                </div>
                                             </div>
-                                            <span className={`text-xs font-bold ${leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd')) ? 'text-gray-500' : 'text-green-600'}`}>
-                                                {leaves?.find(l => l.type === 'DIGITAL_UNAVAILABLE' && l.status === 'ACTIVE' && l.start_date === format(selectedDate, 'yyyy-MM-dd'))
-                                                    ? (isRtl ? 'مغلق' : 'Closed')
-                                                    : (isRtl ? 'مفتوح' : 'Open')
-                                                }
-                                            </span>
                                         </div>
                                     )}
                                 <p className="text-gray-500 dark:text-gray-400 font-medium">{isRtl ? 'لا توجد مواعيد لهذا اليوم' : 'No appointments for this day'}</p>
@@ -590,10 +592,16 @@ const ScheduleCalendarPage = () => {
                                     </div>
                                 </div>
 
-                                {selectedDateBookings.map(booking => (
+                                {selectedDateBookings.map((booking, idx) => (
                                     <div key={booking.id} className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-md ${booking.is_overflow ? 'ring-2 ring-amber-400 ring-offset-2' : ''} ${getStatusColor(booking.status)}`}>
                                         <div className="flex items-center gap-4">
-                                            <div className="h-12 w-12 rounded-full bg-white/50 dark:bg-black/20 flex items-center justify-center shadow-sm">
+                                            <div className="flex flex-col items-center justify-center min-w-[3rem]">
+                                                <span className="text-sm font-bold text-gray-500 dark:text-gray-400">
+                                                    {idx + 1} <span className="text-xs">/ {selectedDateBookings.length}</span>
+                                                </span>
+                                                <span className="text-[10px] text-gray-400">{isRtl ? 'مريض' : 'patient'}</span>
+                                            </div>
+                                            <div className="h-12 w-12 rounded-full bg-white/50 dark:bg-black/20 flex items-center justify-center shadow-sm shrink-0">
                                                 <Users className="h-6 w-6" />
                                             </div>
                                             <div>
@@ -765,13 +773,13 @@ const ScheduleCalendarPage = () => {
             {
                 settingsOpen && (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in">
-                        <div className="bg-white rounded-2xl p-8 max-w-lg w-full mx-4 shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+                        <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-lg w-full mx-4 shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto border border-transparent dark:border-gray-800">
                             <h3 className="text-2xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                                 {isRtl ? 'إعدادات الجدول والحجز' : 'Schedule & Booking Settings'}
                             </h3>
-                            <div className="space-y-6">
+                            <div className="space-y-6 text-gray-900 dark:text-gray-100">
                                 {/* Digital Booking Toggle */}
-                                <div className="flex items-center gap-4 p-4 border-2 rounded-xl bg-gray-50">
+                                <div className="flex items-center gap-4 p-4 border-2 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                                     <input type="checkbox" id="digital_booking" defaultChecked={doctorProfile?.is_digital_booking_active}
                                         onChange={e => updateSettingsMutation.mutate({ is_digital_booking_active: e.target.checked })}
                                         className="h-5 w-5 accent-green-600" />
@@ -781,26 +789,18 @@ const ScheduleCalendarPage = () => {
                                     </label>
                                 </div>
 
-                                {/* Auto Approve Toggle */}
-                                <div className="flex items-center gap-4 p-4 border-2 rounded-xl bg-purple-50">
-                                    <input type="checkbox" id="auto_approve" defaultChecked={doctorProfile?.auto_approve_bookings}
-                                        onChange={e => updateSettingsMutation.mutate({ auto_approve_bookings: e.target.checked })}
-                                        className="h-5 w-5 accent-purple-600" />
-                                    <label htmlFor="auto_approve" className="cursor-pointer flex-1">
-                                        <p className="font-semibold">{isRtl ? 'الموافقة التلقائية على الحجوزات' : 'Auto-Approve Bookings'}</p>
-                                        <p className="text-xs text-gray-500">{isRtl ? 'قبول طلبات الحجز القادمة تلقائياً دون الحاجة لمراجعة يدوية' : 'Automatically accept incoming booking requests without manual review'}</p>
-                                    </label>
-                                </div>
+
+
 
                                 {/* Booking Visibility */}
                                 <div>
                                     <Label className="text-sm font-semibold">{isRtl ? 'مدى ظهور المواعيد' : 'Booking Visibility'}</Label>
                                     <select
-                                        className="w-full mt-2 p-3 border-2 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-400"
+                                        className="w-full mt-2 p-3 border-2 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-blue-400 dark:text-white"
                                         defaultValue={doctorProfile?.booking_visibility_weeks}
                                         onChange={e => updateSettingsMutation.mutate({ booking_visibility_weeks: parseInt(e.target.value) })}
                                     >
-                                        {[1, 2, 3, 4].map(w => (
+                                        {Array.from({ length: 20 }, (_, i) => i + 1).map(w => (
                                             <option key={w} value={w}>
                                                 {isRtl ? `${w} ${w === 1 ? 'أسبوع' : 'أسابيع'}` : `${w} Week${w > 1 ? 's' : ''}`}
                                             </option>
@@ -811,15 +811,26 @@ const ScheduleCalendarPage = () => {
 
                                 {/* Booking Cutoff */}
                                 <div>
-                                    <Label className="text-sm font-semibold">{isRtl ? 'إيقاف الحجز قبل (ساعات)' : 'Stop Booking Before (Hours)'}</Label>
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        className="mt-2 border-2 bg-gray-50"
-                                        defaultValue={doctorProfile?.booking_cutoff_hours}
-                                        onChange={e => updateSettingsMutation.mutate({ booking_cutoff_hours: parseInt(e.target.value) })}
-                                    />
-                                    <p className="text-xs text-gray-400 mt-1">{isRtl ? 'أقرب وقت قبل الموعد يسمح بالحجز فيه' : 'Minimum hours before appointment allow booking'}</p>
+                                    <div className="flex items-center gap-4 mb-2 p-3 border-2 dark:border-orange-900/50 rounded-xl bg-orange-50 dark:bg-orange-950/20">
+                                        <input type="checkbox" id="booking_cutoff_active" defaultChecked={doctorProfile?.is_booking_cutoff_active ?? true}
+                                            onChange={e => updateSettingsMutation.mutate({ is_booking_cutoff_active: e.target.checked })}
+                                            className="h-5 w-5 accent-orange-600" />
+                                        <label htmlFor="booking_cutoff_active" className="cursor-pointer flex-1">
+                                            <p className="font-semibold text-sm">{isRtl ? 'تفعيل إيقاف الحجز التلقائي' : 'Enable Auto-Cutoff'}</p>
+                                            <p className="text-xs text-gray-500">{isRtl ? 'إيقاف استقبال الحجوزات قبل الموعد بمدة محددة' : 'Stop receiving bookings a certain time before appointment'}</p>
+                                        </label>
+                                    </div>
+                                    <div className={`transition-opacity duration-200 ${(doctorProfile?.is_booking_cutoff_active ?? true) ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+                                        <Label className="text-sm font-semibold">{isRtl ? 'إيقاف الحجز قبل (ساعات)' : 'Stop Booking Before (Hours)'}</Label>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            className="mt-2 border-2 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 dark:text-white"
+                                            defaultValue={doctorProfile?.booking_cutoff_hours}
+                                            onChange={e => updateSettingsMutation.mutate({ booking_cutoff_hours: parseInt(e.target.value) })}
+                                        />
+                                        <p className="text-xs text-gray-400 mt-1">{isRtl ? 'أقرب وقت قبل الموعد يسمح بالحجز فيه' : 'Minimum hours before appointment allow booking'}</p>
+                                    </div>
                                 </div>
 
                                 <hr className="border-gray-200" />
@@ -827,7 +838,7 @@ const ScheduleCalendarPage = () => {
                                 <div>
                                     <Label className="text-sm font-semibold">{isRtl ? 'العرض المفضل' : 'Preferred View'}</Label>
                                     <select
-                                        className="w-full mt-2 p-3 border-2 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-400"
+                                        className="w-full mt-2 p-3 border-2 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 focus:ring-2 focus:ring-blue-400 dark:text-white"
                                         defaultValue={doctorProfile?.preferred_calendar_view}
                                         onChange={e => updateSettingsMutation.mutate({ preferred_calendar_view: e.target.value })}
                                     >
@@ -836,7 +847,7 @@ const ScheduleCalendarPage = () => {
                                     </select>
                                 </div>
 
-                                <div className="flex items-center gap-4 p-4 border-2 rounded-xl bg-gray-50">
+                                <div className="flex items-center gap-4 p-4 border-2 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                                     <input type="checkbox" id="overbooking" defaultChecked={doctorProfile?.allow_overbooking}
                                         onChange={e => updateSettingsMutation.mutate({ allow_overbooking: e.target.checked })}
                                         className="h-5 w-5 accent-purple-600" />
@@ -863,17 +874,17 @@ const ScheduleCalendarPage = () => {
             {
                 emergencyModal && (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in">
-                        <div className="bg-white rounded-3xl p-6 max-w-lg w-full mx-4 shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto border border-gray-100">
+                        <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 max-w-lg w-full mx-4 shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto border border-gray-100 dark:border-gray-800">
                             {/* Header */}
                             <div className="flex items-center gap-4 mb-6 border-b pb-4">
-                                <div className="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                                <div className="h-12 w-12 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center shrink-0">
                                     <AlertTriangle className="h-6 w-6 text-red-500" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-gray-900">
+                                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                                         {isRtl ? 'تسجيل إجازة طارئة' : 'Emergency Time Off'}
                                     </h3>
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">
                                         {isRtl ? 'إدارة الغياب المفاجئ وإعادة الجدولة' : 'Manage unexpected absence & rescheduling'}
                                     </p>
                                 </div>
@@ -881,32 +892,57 @@ const ScheduleCalendarPage = () => {
 
                             <div className="space-y-6">
                                 {/* Date Selection */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1.5">
-                                        <Label className="text-xs font-semibold uppercase text-gray-500 tracking-wider ml-1">{isRtl ? 'من' : 'From'}</Label>
-                                        <div className="relative">
-                                            <Input type="date"
-                                                className="pl-3 pr-3 h-11 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
-                                                value={format(emergencyData.start_date, 'yyyy-MM-dd')}
-                                                onChange={e => setEmergencyData({ ...emergencyData, start_date: new Date(e.target.value) })}
-                                            />
+                                {(() => {
+                                    const currentYear = new Date().getFullYear()
+                                    const years = [currentYear, currentYear + 1]
+                                    const months = Array.from({ length: 12 }, (_, i) => i)
+                                    const monthNames = isRtl
+                                        ? ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+                                        : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                                    const getDays = (year, month) => new Date(year, month + 1, 0).getDate()
+                                    const updateDate = (field, part, val) => {
+                                        const d = new Date(emergencyData[field])
+                                        if (part === 'year') d.setFullYear(val)
+                                        if (part === 'month') { d.setMonth(val); if (d.getDate() !== emergencyData[field].getDate()) d.setDate(0) }
+                                        if (part === 'day') d.setDate(val)
+                                        setEmergencyData({ ...emergencyData, [field]: d })
+                                    }
+                                    const selClass = "h-10 px-2 border rounded-lg bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 dark:text-white text-sm flex-1 min-w-0"
+                                    const renderDateDropdowns = (field) => {
+                                        const d = emergencyData[field]
+                                        return (
+                                            <div className="flex gap-1.5">
+                                                <select className={selClass} value={d.getFullYear()} onChange={e => updateDate(field, 'year', +e.target.value)}>
+                                                    {years.map(y => <option key={y} value={y}>{y}</option>)}
+                                                </select>
+                                                <select className={selClass} value={d.getMonth()} onChange={e => updateDate(field, 'month', +e.target.value)}>
+                                                    {months.map(m => <option key={m} value={m}>{monthNames[m]}</option>)}
+                                                </select>
+                                                <select className={selClass} value={d.getDate()} onChange={e => updateDate(field, 'day', +e.target.value)}>
+                                                    {Array.from({ length: getDays(d.getFullYear(), d.getMonth()) }, (_, i) => i + 1).map(day => (
+                                                        <option key={day} value={day}>{day}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )
+                                    }
+                                    return (
+                                        <div className="space-y-4">
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wider ml-1">{isRtl ? 'من' : 'From'}</Label>
+                                                {renderDateDropdowns('start_date')}
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <Label className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 tracking-wider ml-1">{isRtl ? 'إلى' : 'To'}</Label>
+                                                {renderDateDropdowns('end_date')}
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <Label className="text-xs font-semibold uppercase text-gray-500 tracking-wider ml-1">{isRtl ? 'إلى' : 'To'}</Label>
-                                        <div className="relative">
-                                            <Input type="date"
-                                                className="pl-3 pr-3 h-11 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
-                                                value={format(emergencyData.end_date, 'yyyy-MM-dd')}
-                                                onChange={e => setEmergencyData({ ...emergencyData, end_date: new Date(e.target.value) })}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
+                                    )
+                                })()}
 
                                 {/* Reason Selection */}
                                 <div className="space-y-3">
-                                    <Label className="text-sm font-semibold text-gray-900">{isRtl ? 'سبب الغياب' : 'Reason for Absence'}</Label>
+                                    <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100">{isRtl ? 'سبب الغياب' : 'Reason for Absence'}</Label>
                                     <div className="flex flex-wrap gap-2 mb-2">
                                         {[
                                             { id: 'sick', label_ar: 'ظرف صحي', label_en: 'Health Issue' },
@@ -919,7 +955,7 @@ const ScheduleCalendarPage = () => {
                                                 onClick={() => setEmergencyData({ ...emergencyData, reason: isRtl ? reason.label_ar : reason.label_en })}
                                                 className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 border ${emergencyData.reason === (isRtl ? reason.label_ar : reason.label_en)
                                                     ? 'bg-gray-900 text-white border-gray-900 shadow-md transform scale-105'
-                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                                                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                                                     }`}
                                             >
                                                 {isRtl ? reason.label_ar : reason.label_en}
@@ -927,7 +963,7 @@ const ScheduleCalendarPage = () => {
                                         ))}
                                     </div>
                                     <Input
-                                        className="h-11 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+                                        className="h-11 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:bg-white dark:focus:bg-gray-700 transition-colors dark:text-white"
                                         placeholder={isRtl ? 'سبب آخر...' : 'Other reason...'}
                                         value={emergencyData.reason}
                                         onChange={e => setEmergencyData({ ...emergencyData, reason: e.target.value })}
@@ -937,42 +973,48 @@ const ScheduleCalendarPage = () => {
                                 {/* Suggestion Expiry */}
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between">
-                                        <Label className="text-sm font-semibold text-gray-900">{isRtl ? 'مدة حجز البدائل' : 'Hold Suggestions For'}</Label>
-                                        <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-full">
-                                            {isRtl ? 'تلقائي' : 'Auto-Reschedule'}
+                                        <Label className="text-sm font-semibold text-gray-900 dark:text-gray-100">{isRtl ? 'مهلة الرد على البدائل' : 'Response Deadline'}</Label>
+                                        <span className="text-xs text-blue-600 dark:text-blue-400 font-medium bg-blue-50 dark:bg-blue-900/40 px-2 py-1 rounded-full">
+                                            {isRtl ? 'حسب الموعد' : 'Dynamic'}
                                         </span>
                                     </div>
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-2 gap-3">
                                         {[
-                                            { id: '1_DAY', label: isRtl ? 'يوم' : '1 Day', sub: isRtl ? 'سريع' : 'Urgent' },
-                                            { id: '2_DAYS', label: isRtl ? 'يومين' : '2 Days', sub: isRtl ? 'قياسي' : 'Standard' },
-                                            { id: '1_WEEK', label: isRtl ? 'أسبوع' : '1 Week', sub: isRtl ? 'مرن' : 'Flexible' }
+                                            { id: 'QUARTER', label: isRtl ? 'ربع المدة' : 'Quarter', sub: isRtl ? 'أسرع' : 'Faster', desc: '1/4' },
+                                            { id: 'HALF', label: isRtl ? 'نصف المدة' : 'Half', sub: isRtl ? 'أكثر مرونة' : 'Flexible', desc: '1/2' }
                                         ].map(opt => (
                                             <button
                                                 key={opt.id}
-                                                onClick={() => setEmergencyData({ ...emergencyData, suggestion_expiry: opt.id })}
+                                                onClick={() => setEmergencyData({ ...emergencyData, expiry_fraction: opt.id })}
                                                 className={`
-                                                relative p-3 rounded-xl border-2 text-center transition-all duration-200
-                                                ${emergencyData.suggestion_expiry === opt.id
-                                                        ? 'border-blue-500 bg-blue-50/50 text-blue-700 shadow-sm'
-                                                        : 'border-gray-100 bg-white text-gray-600 hover:border-gray-200 hover:bg-gray-50'
+                                                relative p-4 rounded-xl border-2 text-center transition-all duration-200
+                                                ${emergencyData.expiry_fraction === opt.id
+                                                        ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm'
+                                                        : 'border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:border-gray-200 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                                                     }
                                             `}
                                             >
-                                                <div className="font-bold text-lg">{opt.label}</div>
-                                                <div className="text-[10px] uppercase tracking-wide opacity-70 font-semibold">{opt.sub}</div>
-                                                {emergencyData.suggestion_expiry === opt.id && (
+                                                <div className="text-2xl font-bold mb-1">{opt.desc}</div>
+                                                <div className="font-semibold text-sm">{opt.label}</div>
+                                                <div className="text-[10px] uppercase tracking-wide opacity-70 font-semibold mt-1">{opt.sub}</div>
+                                                {emergencyData.expiry_fraction === opt.id && (
                                                     <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-500"></div>
                                                 )}
                                             </button>
                                         ))}
                                     </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                        {isRtl
+                                            ? 'المهلة تُحسب كنسبة من الوقت بين الآن وأقرب موعد بديل'
+                                            : 'Deadline is calculated as a fraction of time between now and the earliest alternative slot'
+                                        }
+                                    </p>
                                 </div>
 
                                 {/* Warning Box */}
-                                <div className="flex gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100 items-start">
-                                    <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                                    <p className="text-xs leading-relaxed text-amber-800 font-medium">
+                                <div className="flex gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800 items-start">
+                                    <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                                    <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300 font-medium">
                                         {isRtl
                                             ? 'سيتم إلغاء جميع المواعيد في هذه الفترة الحالية، وإرسال روابط خاصة للمرضى لاختيار موعد بديل من الخيارات المقترحة.'
                                             : 'All current bookings in this range will be cancelled. Patients will receive a special link to pick an alternative slot from suggestions.'}
@@ -982,7 +1024,7 @@ const ScheduleCalendarPage = () => {
 
                             {/* Actions */}
                             <div className="flex gap-3 mt-8 pt-4 border-t">
-                                <Button className="flex-1 bg-gray-900 hover:bg-gray-800 text-white h-12 text-base shadow-lg shadow-gray-200 rounded-xl"
+                                <Button className="flex-1 bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-gray-200 text-white dark:text-gray-900 h-12 text-base shadow-lg shadow-gray-200 dark:shadow-gray-800 rounded-xl"
                                     onClick={() => emergencyMutation.mutate({
                                         ...emergencyData,
                                         start_date: format(emergencyData.start_date, 'yyyy-MM-dd'),
@@ -992,7 +1034,7 @@ const ScheduleCalendarPage = () => {
                                 >
                                     {emergencyMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : (isRtl ? 'تأكيد الإجراء' : 'Confirm Action')}
                                 </Button>
-                                <Button variant="ghost" className="h-12 px-6 rounded-xl hover:bg-gray-100 text-gray-600" onClick={() => setEmergencyModal(false)}>
+                                <Button variant="ghost" className="h-12 px-6 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400" onClick={() => setEmergencyModal(false)}>
                                     {isRtl ? 'إلغاء' : 'Cancel'}
                                 </Button>
                             </div>
@@ -1005,7 +1047,7 @@ const ScheduleCalendarPage = () => {
             {
                 leavesModal && (
                     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in">
-                        <div className="bg-white rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+                        <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto border border-gray-100 dark:border-gray-800">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                                     {isRtl ? 'الإجازات النشطة' : 'Active Time Off Requests'}
@@ -1018,25 +1060,25 @@ const ScheduleCalendarPage = () => {
                             {leavesLoading ? (
                                 <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>
                             ) : leaves?.length === 0 ? (
-                                <div className="text-center py-8 text-gray-500">
+                                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                                     <p>{isRtl ? 'لا توجد إجازات قادمة' : 'No upcoming time off'}</p>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
                                     {leaves.filter(l => l.type !== 'DIGITAL_UNAVAILABLE').map(leave => (
-                                        <div key={leave.id} className="p-4 rounded-xl border-2 border-gray-100 bg-gray-50 flex justify-between items-center group hover:border-red-200 hover:bg-red-50/30 transition-all">
+                                        <div key={leave.id} className="p-4 rounded-xl border-2 border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex justify-between items-center group hover:border-red-200 dark:hover:border-red-800 hover:bg-red-50/30 dark:hover:bg-red-900/20 transition-all">
                                             <div>
                                                 <div className="flex items-center gap-2">
-                                                    <p className="font-bold text-gray-800">
+                                                    <p className="font-bold text-gray-800 dark:text-gray-200">
                                                         {format(new Date(leave.start_date), 'MMM d')} - {format(new Date(leave.end_date), 'MMM d, yyyy')}
                                                     </p>
                                                     {leave.type === 'DIGITAL_UNAVAILABLE' && (
-                                                        <Badge variant="secondary" className="bg-gray-200 text-gray-700 text-[10px] whitespace-nowrap">
+                                                        <Badge variant="secondary" className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-[10px] whitespace-nowrap">
                                                             {isRtl ? 'حجز رقمي مغلق' : 'Digital Block'}
                                                         </Badge>
                                                     )}
                                                 </div>
-                                                <p className="text-xs text-gray-500 mt-1">{leave.reason || (isRtl ? 'بدون سبب' : 'No reason provided')}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{leave.reason || (isRtl ? 'بدون سبب' : 'No reason provided')}</p>
                                                 <Badge variant="outline" className={`mt-2 ${leave.status === 'CANCELLED' ? 'border-red-500 text-red-500' : 'border-green-500 text-green-500'}`}>
                                                     {leave.status}
                                                 </Badge>

@@ -4,7 +4,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
-from users.views import RegisterUserView, CurrentUserView, DoctorListView, DoctorDetailView, SecretaryViewSet, UpdateProfileView, DoctorProfileUpdateView, ResolveMapsLinkView, SecretaryDoctorProfileView, AdminDoctorEntryView, AdminStatsView, CustomLoginView
+from users.views import RegisterUserView, CurrentUserView, DoctorListView, DoctorDetailView, SecretaryViewSet, UpdateProfileView, DoctorProfileUpdateView, ResolveMapsLinkView, SecretaryDoctorProfileView, AdminDoctorEntryView, AdminStatsView, CustomLoginView, VerifyEmailView, ForgotPasswordView, ResetPasswordView, SMTPSettingsViewSet, ResendVerificationEmailView, ChangeUnverifiedEmailView, CheckVerificationStatusView, AdminPatientListView, ChangePasswordView, SoftDeleteAccountView, RemoveProfilePictureView
 from clinic.views import BookingViewSet, RatingViewSet, ActivityLogViewSet
 from scheduling.views import CheckConflictsView, TimeOffView, PublicReschedulingView, DoctorAvailabilityViewSet, DoctorSlotsView, DaySlotsView, TimeOffDetailView, AuthenticatedRescheduleAcceptView
 from notifications.views import NotificationListView, MarkNotificationReadView, MarkAllReadView
@@ -15,6 +15,7 @@ router.register(r'bookings', BookingViewSet, basename='booking')
 router.register(r'ratings', RatingViewSet, basename='rating')
 router.register(r'activity-logs', ActivityLogViewSet, basename='activity-log')
 router.register(r'secretaries', SecretaryViewSet, basename='secretary')
+router.register(r'smtp-settings', SMTPSettingsViewSet, basename='smtp-settings')
 
 # Scheduling router
 scheduling_router = DefaultRouter()
@@ -23,12 +24,20 @@ scheduling_router.register(r'availability', DoctorAvailabilityViewSet, basename=
 urlpatterns = [
     path('admin/', admin.site.urls),
     
-    # Auth
     path('api/auth/register/', RegisterUserView.as_view(), name='register'),
+    path('api/auth/verify-email/', VerifyEmailView.as_view(), name='verify_email'),
+    path('api/auth/resend-verification/', ResendVerificationEmailView.as_view(), name='resend_verification'),
+    path('api/auth/change-unverified-email/', ChangeUnverifiedEmailView.as_view(), name='change_unverified_email'),
+    path('api/auth/check-verification-status/', CheckVerificationStatusView.as_view(), name='check_verification_status'),
     path('api/auth/login/', CustomLoginView.as_view(), name='custom_login'),
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/auth/forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),
+    path('api/auth/reset-password/', ResetPasswordView.as_view(), name='reset_password'),
+    path('api/auth/change-password/', ChangePasswordView.as_view(), name='change_password'),
+    path('api/auth/delete-account/', SoftDeleteAccountView.as_view(), name='delete_account'),
     path('api/auth/me/', CurrentUserView.as_view(), name='current_user'),
     path('api/auth/profile/', UpdateProfileView.as_view(), name='update_profile'),
+    path('api/auth/remove-profile-picture/', RemoveProfilePictureView.as_view(), name='remove_profile_picture'),
 
     # Users
     path('api/doctors/', DoctorListView.as_view(), name='doctor_list'),
@@ -39,6 +48,7 @@ urlpatterns = [
     path('api/resolve-maps-link/', ResolveMapsLinkView.as_view(), name='resolve_maps_link'),
     path('api/admin/doctors/', AdminDoctorEntryView.as_view(), name='admin_doctor_entry'),
     path('api/admin/stats/', AdminStatsView.as_view(), name='admin_stats'),
+    path('api/admin/patients/', AdminPatientListView.as_view(), name='admin_patient_list'),
 
     # Secretary endpoints
     path('api/secretary/doctor-profile/', SecretaryDoctorProfileView.as_view(), name='secretary_doctor_profile'),

@@ -1,16 +1,17 @@
 from rest_framework import serializers
 from django.db import models
-from .models import User, Doctor, Patient, Secretary
+from django.db import models
+from .models import User, Doctor, Patient, Secretary, SMTPSettings
 
 class DoctorSerializer(serializers.ModelSerializer):
     max_patients_per_session = serializers.SerializerMethodField()
     
     class Meta:
         model = Doctor
-        fields = ['id', 'specialty', 'consultation_price', 'bio', 'location', 'landmark', 'latitude', 'longitude', 
-                  'facebook', 'instagram', 'tiktok', 'twitter', 'youtube', 'is_verified', 'license_image', 'gender',
+        fields = ['id', 'user_id', 'specialty', 'consultation_price', 'bio', 'location', 'landmark', 'latitude', 'longitude', 'maps_link',
+                  'facebook', 'instagram', 'tiktok', 'twitter', 'youtube', 'is_verified', 'verification_status', 'rejection_reason', 'license_image', 'gender',
                   'session_duration', 'time_per_patient', 'allow_overbooking', 'preferred_calendar_view', 
-                  'booking_visibility_weeks', 'is_digital_booking_active', 'booking_cutoff_hours', 'auto_approve_bookings',
+                  'booking_visibility_weeks', 'is_digital_booking_active', 'booking_cutoff_hours', 'is_booking_cutoff_active', 'auto_approve_bookings',
                   'max_patients_per_session']
     
     def get_max_patients_per_session(self, obj):
@@ -21,10 +22,25 @@ class AdminDoctorListSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(source='user.last_name', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
     joined_at = serializers.DateTimeField(source='user.date_joined', read_only=True)
+    is_banned = serializers.BooleanField(source='user.is_banned', read_only=True)
+    ban_reason = serializers.CharField(source='user.ban_reason', read_only=True, allow_null=True)
     
     class Meta:
         model = Doctor
-        fields = ['id', 'first_name', 'last_name', 'email', 'specialty', 'license_image', 'is_verified', 'gender', 'joined_at']
+        fields = ['id', 'first_name', 'last_name', 'email', 'specialty', 'license_image', 'is_verified', 'verification_status', 'rejection_reason', 'gender', 'joined_at', 'is_banned', 'ban_reason']
+
+class AdminPatientListSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source='user.first_name', read_only=True)
+    last_name = serializers.CharField(source='user.last_name', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
+    joined_at = serializers.DateTimeField(source='user.date_joined', read_only=True)
+    is_active = serializers.BooleanField(source='user.is_active', read_only=True)
+    is_banned = serializers.BooleanField(source='user.is_banned', read_only=True)
+    ban_reason = serializers.CharField(source='user.ban_reason', read_only=True, allow_null=True)
+    
+    class Meta:
+        model = Patient
+        fields = ['id', 'first_name', 'last_name', 'email', 'gender', 'date_of_birth', 'joined_at', 'is_active', 'is_banned', 'ban_reason']
 
 # New serializer for doctor listing with user info
 class DoctorListSerializer(serializers.ModelSerializer):
@@ -38,7 +54,7 @@ class DoctorListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Doctor
         fields = ['id', 'first_name', 'last_name', 'email', 'profile_picture', 'specialty', 
-                  'consultation_price', 'bio', 'location', 'landmark', 'latitude', 'longitude', 
+                  'consultation_price', 'bio', 'location', 'landmark', 'latitude', 'longitude', 'maps_link',
                   'facebook', 'instagram', 'tiktok', 'twitter', 'youtube',
                   'is_verified', 'average_rating', 'ratings_count']
     
@@ -123,3 +139,12 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'phone', 'profile_picture']
+
+class SMTPSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SMTPSettings
+        fields = '__all__'
+        extra_kwargs = {
+            'email_host_password': {'write_only': True}
+        }
+

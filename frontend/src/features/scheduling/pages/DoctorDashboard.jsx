@@ -23,8 +23,11 @@ import {
     Loader2,
     Settings,
     Play,
-    MessageSquare
+    MessageSquare,
+    Activity,
+    Target
 } from 'lucide-react'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts'
 
 const StatCard = ({ title, value, icon: Icon, color = "text-primary" }) => (
     <Card>
@@ -224,6 +227,32 @@ const DoctorDashboardNew = () => {
     const completedBookings = todayBookings.filter(b => b.status === 'COMPLETED')
     const unreadNotifications = notifications?.filter(n => !n.is_read).length || 0
 
+    // Performance Calculations
+    const nowTime = new Date().getTime()
+    const missedBookingsCount = todayBookings.filter(b => {
+        if (b.status === 'CANCELLED') return true
+        if (['PENDING', 'CONFIRMED'].includes(b.status)) {
+            // Check if the booking time has already passed
+            const bookingDateTime = new Date(b.booking_datetime).getTime()
+            // Add a 1 hour buffer to consider it "missed" if they didn't show up 1 hr after their slot started
+            const bufferTime = 60 * 60 * 1000
+            return (bookingDateTime + bufferTime) < nowTime
+        }
+        return false
+    }).length
+
+    const totalTodayCount = todayBookings.length
+    const completedCount = completedBookings.length
+    const completionRate = totalTodayCount > 0 ? Math.round((completedCount / totalTodayCount) * 100) : 0
+
+    const ongoingCount = totalTodayCount - completedCount - missedBookingsCount
+    const chartData = [
+        { name: isRtl ? 'مكتمل' : 'Completed', value: completedCount, color: '#10b981' }, // Emerald
+        { name: isRtl ? 'جاري / قيد الانتظار' : 'Ongoing/Pending', value: Math.max(0, ongoingCount), color: '#fbbf24' }, // Amber
+        { name: isRtl ? 'لم يحضر / ملغي' : 'Missed/Cancelled', value: missedBookingsCount, color: '#f87171' } // Red
+    ].filter(item => item.value > 0) // Only show categories with data
+
+
     const getStatusBadge = (status) => {
         const styles = {
             PENDING: { bg: 'bg-yellow-100 text-yellow-800', icon: AlertCircle, label: isRtl ? 'معلق' : 'Pending' },
@@ -322,6 +351,76 @@ const DoctorDashboardNew = () => {
                     <StatCard title={isRtl ? "جاري الفحص" : "In Progress"} value={inProgressBookings.length} icon={Play} color="text-purple-600" />
                     <StatCard title={isRtl ? "مكتمل اليوم" : "Completed Today"} value={completedBookings.length} icon={Users} color="text-green-600" />
                 </div>
+
+                {/* Today's Performance Overview */}
+                <Card className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-800 text-white overflow-hidden relative shadow-xl">
+                    <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white/10 blur-2xl"></div>
+                    <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-32 h-32 rounded-full bg-white/10 blur-2xl"></div>
+                    <CardContent className="p-6 md:p-8 relative z-10">
+                        <div className="flex flex-col md:flex-row gap-8 items-center justify-between">
+                            <div className="space-y-4 text-center md:text-start flex-1">
+                                <div className="inline-flex items-center justify-center gap-2 bg-white/20 px-3 py-1 rounded-full text-indigo-50">
+                                    <Activity className="h-4 w-4" />
+                                    <span className="text-sm font-medium">{isRtl ? 'ملخص الأداء اليومي' : 'Daily Performance Summary'}</span>
+                                </div>
+                                <div>
+                                    <h3 className="text-4xl font-extrabold">{completionRate}%</h3>
+                                    <p className="text-indigo-200 text-sm mt-1">{isRtl ? 'نسبة إنجاز المواعيد اليوم' : 'Today\'s appointment completion rate'}</p>
+                                </div>
+
+                                <div className="pt-4 grid grid-cols-2 gap-4">
+                                    <div className="text-start p-3 rounded-xl bg-white/10 border border-white/5">
+                                        <p className="text-indigo-200 text-xs font-medium tracking-wider">{isRtl ? 'إجمالي المرضى' : 'Total Patients'}</p>
+                                        <span className="text-2xl font-bold mt-1 block">{totalTodayCount}</span>
+                                    </div>
+                                    <div className="text-start p-3 rounded-xl bg-white/10 border border-white/5">
+                                        <p className="text-indigo-200 text-xs font-medium tracking-wider">{isRtl ? 'اكتمل' : 'Completed'}</p>
+                                        <span className="text-2xl font-bold mt-1 block text-emerald-400">{completedCount}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex-1 w-full flex flex-col items-center justify-center min-h-[250px]">
+                                {totalTodayCount > 0 ? (
+                                    <ResponsiveContainer width="100%" height={250}>
+                                        <PieChart>
+                                            <Pie
+                                                data={chartData}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={60}
+                                                outerRadius={90}
+                                                paddingAngle={5}
+                                                dataKey="value"
+                                                stroke="none"
+                                            >
+                                                {chartData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                                ))}
+                                            </Pie>
+                                            <RechartsTooltip
+                                                contentStyle={{ borderRadius: '12px', border: 'none', backgroundColor: 'rgba(30, 27, 75, 0.9)', color: '#fff' }}
+                                                itemStyle={{ color: '#fff' }}
+                                            />
+                                            <Legend
+                                                verticalAlign="bottom"
+                                                height={36}
+                                                iconType="circle"
+                                                wrapperStyle={{ paddingTop: '10px' }}
+                                            />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full text-indigo-300/60 p-8 border-2 border-dashed border-indigo-300/20 rounded-full w-48 h-48">
+                                        <Target className="h-10 w-10 mb-2 opacity-50" />
+                                        <p className="text-sm font-medium">{isRtl ? 'لاتوجد بيانات اليوم' : 'No data today'}</p>
+                                    </div>
+                                )}
+                            </div>
+
+                        </div>
+                    </CardContent>
+                </Card>
 
                 {/* Pending */}
                 {pendingBookings.length > 0 && (

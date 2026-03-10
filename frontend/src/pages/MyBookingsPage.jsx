@@ -287,6 +287,9 @@ const MyBookingsPage = () => {
                                                             <Clock className="h-3.5 w-3.5" />
                                                             {safeFormat(booking.booking_datetime, 'p')}
                                                         </span>
+                                                        <span className={`text-xs px-2 py-0.5 rounded-full ${booking.booking_type === 'FOLLOWUP' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-teal-100 text-teal-700 border border-teal-200'}`}>
+                                                            {booking.booking_type === 'FOLLOWUP' ? (isRtl ? 'مراجعة' : 'Follow-up') : (isRtl ? 'زيارة جديدة' : 'New Visit')}
+                                                        </span>
                                                         {booking.number_of_people > 1 && (
                                                             <span className="flex items-center gap-1 text-indigo-600 font-medium bg-indigo-50 px-2 py-0.5 rounded">
                                                                 <Users className="h-3.5 w-3.5" />
@@ -300,17 +303,32 @@ const MyBookingsPage = () => {
                                                 {getStatusBadge(booking.status)}
 
                                                 <div className="flex flex-wrap justify-end gap-2">
-                                                    {['PENDING', 'CONFIRMED'].includes(booking.status) && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
-                                                            onClick={() => handleCancelClick(booking)}
-                                                        >
-                                                            <Trash2 className="h-4 w-4 mr-1" />
-                                                            {isRtl ? 'إلغاء' : 'Cancel'}
-                                                        </Button>
-                                                    )}
+                                                    {['PENDING', 'CONFIRMED'].includes(booking.status) && (() => {
+                                                        const bookingTime = new Date(booking.booking_datetime)
+                                                        const createdAt = new Date(booking.created_at)
+                                                        const now = new Date()
+                                                        const msUntilBooking = bookingTime - now
+                                                        const msSinceCreation = now - createdAt
+                                                        const isLocked = msUntilBooking <= 24 * 60 * 60 * 1000 && msSinceCreation > 10 * 60 * 1000
+
+                                                        if (isLocked) return (
+                                                            <span className="text-xs text-red-500 flex items-center gap-1 px-2 py-1 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
+                                                                <XCircle className="h-3 w-3" />
+                                                                {isRtl ? 'مقفل' : 'Locked'}
+                                                            </span>
+                                                        )
+                                                        return (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
+                                                                onClick={() => handleCancelClick(booking)}
+                                                            >
+                                                                <Trash2 className="h-4 w-4 mr-1" />
+                                                                {isRtl ? 'إلغاء' : 'Cancel'}
+                                                            </Button>
+                                                        )
+                                                    })()}
                                                     {booking.status === 'COMPLETED' && !booking.is_rated && !ratedDoctorIds.has(booking.doctor) && (
                                                         <Button
                                                             variant="outline"

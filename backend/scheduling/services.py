@@ -26,6 +26,8 @@ class ConflictService:
     def auto_resolve_conflicts(time_off_request):
         """
         Cancels conflicting bookings and creates rescheduling requests with suggested slots.
+        Reserves slots as PENDING bookings for each patient.
+        Expiry is calculated dynamically as a fraction of time until the earliest suggested slot.
         """
         from scheduling.models import ReschedulingRequest
         import secrets
@@ -52,13 +54,8 @@ class ConflictService:
             "walkin_cancelled": 0
         }
         
-        # Calculate expiry datetime
-        expiry_days = {
-            '1_DAY': 1,
-            '2_DAYS': 2,
-            '1_WEEK': 7
-        }.get(time_off_request.suggestion_expiry, 2)
-        expires_at = timezone.now() + datetime.timedelta(days=expiry_days)
+        # Determine fraction value
+        fraction_value = 0.25 if time_off_request.expiry_fraction == 'QUARTER' else 0.50
         
         for booking in conflicts:
             # Cancel Booking
@@ -79,6 +76,37 @@ class ConflictService:
                 start_search_date=time_off_request.end_date + datetime.timedelta(days=1)
             )
             
+            # Calculate dynamic expiry based on earliest suggested slot
+            now = timezone.now()
+            if suggested_slots:
+                earliest_slot_str = suggested_slots[0]
+                earliest_slot_dt = datetime.datetime.fromisoformat(earliest_slot_str)
+                if timezone.is_naive(earliest_slot_dt):
+                    earliest_slot_dt = timezone.make_aware(earliest_slot_dt)
+                
+                time_until_slot = earliest_slot_dt - now
+                total_seconds = max(time_until_slot.total_seconds(), 3600)  # At least 1 hour
+                expiry_seconds = total_seconds * fraction_value
+                expires_at = now + datetime.timedelta(seconds=expiry_seconds)
+            else:
+                # Fallback: 1 day if no slots found
+                expires_at = now + datetime.timedelta(days=1)
+            
+            # Reserve slots as PENDING bookings
+            reserved_booking_ids = []
+            for slot_iso in suggested_slots:
+                try:
+                    reserved_booking = Booking.objects.create(
+                        doctor=time_off_request.doctor,
+                        patient=booking.patient,
+                        booking_datetime=slot_iso,
+                        status=Booking.Status.PENDING,
+                        notes="حجز محجوز كبديل - Reserved alternative slot"
+                    )
+                    reserved_booking_ids.append(str(reserved_booking.id))
+                except Exception as e:
+                    print(f"Failed to reserve slot {slot_iso}: {e}")
+            
             # Create ReschedulingRequest
             token = secrets.token_urlsafe(32)
             reschedule_req = ReschedulingRequest.objects.create(
@@ -88,6 +116,7 @@ class ConflictService:
                 doctor=time_off_request.doctor,
                 patient=booking.patient,
                 suggested_slots=suggested_slots,
+                reserved_bookings=reserved_booking_ids,
                 expires_at=expires_at
             )
             
@@ -95,10 +124,17 @@ class ConflictService:
             try:
                 from notifications.views import create_notification
                 
+                # Calculate human-readable expiry time
+                expiry_hours = max(1, int(expiry_seconds / 3600))
+                if expiry_hours >= 24:
+                    expiry_text = f"{expiry_hours // 24} يوم و {expiry_hours % 24} ساعة"
+                else:
+                    expiry_text = f"{expiry_hours} ساعة"
+                
                 slots_text = ", ".join([s[:10] for s in suggested_slots[:3]])  # Show dates only
                 message = (
                     f'عذراً، تم إلغاء موعدك بتاريخ {booking.booking_datetime.strftime("%Y-%m-%d %H:%M")} '
-                    f'بسبب ظرف طارئ للطبيب. لديك {expiry_days} يوم لاختيار موعد بديل. '
+                    f'بسبب ظرف طارئ للطبيب. لديك {expiry_text} لاختيار موعد بديل. '
                     f'المواعيد المقترحة: {slots_text}'
                 )
                 

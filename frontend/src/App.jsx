@@ -12,6 +12,12 @@ const RegisterPage = React.lazy(() => import('@/pages/RegisterPage'))
 const AdminDashboard = React.lazy(() => import('@/pages/AdminDashboard'))
 const NotFoundPage = React.lazy(() => import('@/pages/NotFoundPage'))
 
+// Auth Flows
+const VerifyEmailPage = React.lazy(() => import('@/pages/VerifyEmailPage'))
+const ForgotPasswordPage = React.lazy(() => import('@/pages/ForgotPasswordPage'))
+const ResetPasswordPage = React.lazy(() => import('@/pages/ResetPasswordPage'))
+const UnverifiedAccountPage = React.lazy(() => import('@/pages/UnverifiedAccountPage'))
+
 // Protected Pages - Patient Only
 const PatientDashboard = React.lazy(() => import('@/features/patient/pages/PatientDashboard'))
 const DoctorBookingPage = React.lazy(() => import('@/features/patient/pages/DoctorBookingPage'))
@@ -55,6 +61,10 @@ function App() {
                     <Route path="/" element={<LandingPage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/verify-email" element={<VerifyEmailPage />} />
+                    <Route path="/unverified-account" element={<UnverifiedAccountPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
                     <Route path="/reschedule/:token" element={<ReschedulePage />} />
 
                     {/* Patient ONLY Routes */}

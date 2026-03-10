@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import api from '@/lib/axios'
 import { toast } from 'sonner'
-import { Stethoscope, Clock, CheckCircle, ArrowLeft, UserPlus, RefreshCw, Loader2, MapPin, Building, Facebook, Instagram, Twitter, Youtube, Video, Users, Trash2, AlertTriangle, DollarSign, Sparkles, CalendarDays } from 'lucide-react'
+import { Stethoscope, Clock, CheckCircle, ArrowLeft, UserPlus, RefreshCw, Loader2, MapPin, Building, Facebook, Instagram, Twitter, Youtube, Video, Users, Trash2, AlertTriangle, DollarSign, Sparkles, CalendarDays, ChevronDown, ChevronUp } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import MapPicker from '@/components/ui/MapPicker'
 
@@ -23,9 +23,17 @@ const DoctorBookingPage = () => {
     const isRtl = i18n.language === 'ar'
     const [selectedSlot, setSelectedSlot] = useState(null)
     const [bookingType, setBookingType] = useState('NEW')
-    const [numberOfPeople, setNumberOfPeople] = useState(1)
+
     const [bookingSuccess, setBookingSuccess] = useState(false)
     const [showCancelDialog, setShowCancelDialog] = useState(false)
+    const [expandedDays, setExpandedDays] = useState({})
+
+    const toggleDay = (dateKey) => {
+        setExpandedDays(prev => ({
+            ...prev,
+            [dateKey]: !prev[dateKey]
+        }))
+    }
 
     // Fetch doctor details
     const { data: doctor, isLoading: doctorLoading } = useQuery({
@@ -57,9 +65,14 @@ const DoctorBookingPage = () => {
     })
 
     const activeStatuses = ['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'RESCHEDULING_PENDING']
-    const existingActiveBooking = myBookings?.find(b =>
-        b.doctor === doctorId && activeStatuses.includes(b.status)
-    )
+    const existingActiveBooking = myBookings?.find(b => {
+        if (b.doctor !== doctorId || !activeStatuses.includes(b.status)) return false
+
+        // Booking is no longer active once the booking day has ended
+        const bookingDate = new Date(b.booking_datetime)
+        bookingDate.setHours(23, 59, 59, 999)
+        return bookingDate.getTime() >= new Date().getTime()
+    })
     const hasActiveBooking = !!existingActiveBooking
 
     // Group slots by date
@@ -88,7 +101,6 @@ const DoctorBookingPage = () => {
                 doctor: doctorId,
                 booking_datetime: selectedSlot.datetime,
                 booking_type: bookingType,
-                number_of_people: numberOfPeople,
                 patient_notes: ''
             })
             return res.data
@@ -163,12 +175,6 @@ const DoctorBookingPage = () => {
                                     : (isRtl ? '🔄 مراجعة' : '🔄 Follow-up')
                                 }
                             </span>
-                            {numberOfPeople > 1 && (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
-                                    <Users className="h-3 w-3" />
-                                    {isRtl ? `${numberOfPeople} أشخاص` : `${numberOfPeople} people`}
-                                </span>
-                            )}
                         </div>
                     </div>
                     <div className="flex gap-3 mt-6 w-full">
@@ -194,54 +200,86 @@ const DoctorBookingPage = () => {
                 </Button>
 
                 {/* ── Warning: Active Booking Exists ── */}
-                {hasActiveBooking && (
-                    <div className="rounded-2xl border-2 border-amber-300 dark:border-amber-700 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 p-6 shadow-lg">
-                        <div className="flex flex-col md:flex-row items-start gap-4">
-                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shrink-0">
-                                <AlertTriangle className="h-7 w-7 text-white" />
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-xl font-bold text-amber-800 dark:text-amber-400">
-                                    {isRtl ? 'لديك حجز نشط بالفعل' : 'You Have an Active Booking'}
-                                </h3>
-                                <div className="mt-3 p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl border border-amber-200 dark:border-amber-700">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-12 w-12 rounded-xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
-                                            <Clock className="h-6 w-6 text-amber-600" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold">
-                                                {format(parseISO(existingActiveBooking.booking_datetime), 'EEEE', { locale: isRtl ? ar : enUS })}
-                                            </p>
-                                            <p className="text-amber-700 dark:text-amber-300 font-medium">
-                                                {format(parseISO(existingActiveBooking.booking_datetime), 'PPP', { locale: isRtl ? ar : enUS })}
-                                            </p>
-                                            <p className="text-lg font-bold text-primary">
-                                                {format(parseISO(existingActiveBooking.booking_datetime), 'HH:mm')}
-                                            </p>
+                {hasActiveBooking && (() => {
+                    // Cancellation Policy Check
+                    const bookingTime = new Date(existingActiveBooking.booking_datetime)
+                    const createdAt = new Date(existingActiveBooking.created_at)
+                    const now = new Date()
+                    const msUntilBooking = bookingTime - now
+                    const msSinceCreation = now - createdAt
+                    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000
+                    const TEN_MINUTES = 10 * 60 * 1000
+
+                    const isWithin24h = msUntilBooking <= TWENTY_FOUR_HOURS
+                    const graceExpired = msSinceCreation > TEN_MINUTES
+                    const isLocked = isWithin24h && graceExpired
+                    const inGracePeriod = isWithin24h && !graceExpired
+                    const graceRemainingMs = inGracePeriod ? TEN_MINUTES - msSinceCreation : 0
+                    const graceMinutes = Math.ceil(graceRemainingMs / 60000)
+
+                    return (
+                        <div className="rounded-2xl border-2 border-amber-300 dark:border-amber-700 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 p-6 shadow-lg">
+                            <div className="flex flex-col md:flex-row items-start gap-4">
+                                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shrink-0">
+                                    <AlertTriangle className="h-7 w-7 text-white" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-xl font-bold text-amber-800 dark:text-amber-400">
+                                        {isRtl ? 'لديك حجز نشط بالفعل' : 'You Have an Active Booking'}
+                                    </h3>
+                                    <div className="mt-3 p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl border border-amber-200 dark:border-amber-700">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-12 w-12 rounded-xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                                                <Clock className="h-6 w-6 text-amber-600" />
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold">
+                                                    {format(parseISO(existingActiveBooking.booking_datetime), 'EEEE', { locale: isRtl ? ar : enUS })}
+                                                </p>
+                                                <p className="text-amber-700 dark:text-amber-300 font-medium">
+                                                    {format(parseISO(existingActiveBooking.booking_datetime), 'PPP', { locale: isRtl ? ar : enUS })}
+                                                </p>
+                                                <p className="text-lg font-bold text-primary">
+                                                    {format(parseISO(existingActiveBooking.booking_datetime), 'HH:mm')}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <p className="text-sm text-amber-600 dark:text-amber-400 mt-3">
-                                    {isRtl
-                                        ? 'لا يمكنك الحجز مجدداً إلا بعد إتمام أو إلغاء الحجز الحالي'
-                                        : 'You can only book again after your current appointment is completed or cancelled'
-                                    }
-                                </p>
-                                <div className="flex flex-wrap gap-3 mt-4">
-                                    <Button className="bg-amber-600 hover:bg-amber-700 shadow-md rounded-xl gap-2" onClick={() => navigate('/my-bookings')}>
-                                        <Clock className="h-4 w-4" />
-                                        {isRtl ? 'عرض حجوزاتي' : 'View My Bookings'}
-                                    </Button>
-                                    <Button variant="outline" className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl gap-2" onClick={() => setShowCancelDialog(true)}>
-                                        <Trash2 className="h-4 w-4" />
-                                        {isRtl ? 'إلغاء الحجز الحالي' : 'Cancel Current Booking'}
-                                    </Button>
+                                    <p className="text-sm text-amber-600 dark:text-amber-400 mt-3">
+                                        {isRtl
+                                            ? 'لا يمكنك الحجز مجدداً إلا بعد إتمام أو إلغاء الحجز الحالي'
+                                            : 'You can only book again after your current appointment is completed or cancelled'
+                                        }
+                                    </p>
+                                    <div className="flex flex-wrap gap-3 mt-4">
+                                        <Button className="bg-amber-600 hover:bg-amber-700 shadow-md rounded-xl gap-2" onClick={() => navigate('/my-bookings')}>
+                                            <Clock className="h-4 w-4" />
+                                            {isRtl ? 'عرض حجوزاتي' : 'View My Bookings'}
+                                        </Button>
+                                        {isLocked ? (
+                                            <div className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl">
+                                                <AlertTriangle className="h-4 w-4 text-red-500" />
+                                                <span className="text-sm font-medium text-red-600 dark:text-red-400">
+                                                    {isRtl ? 'لا يمكن الإلغاء قبل الموعد بأقل من 24 ساعة' : 'Cannot cancel within 24 hours of appointment'}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <Button variant="outline" className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl gap-2" onClick={() => setShowCancelDialog(true)}>
+                                                <Trash2 className="h-4 w-4" />
+                                                {isRtl ? 'إلغاء الحجز الحالي' : 'Cancel Current Booking'}
+                                                {inGracePeriod && (
+                                                    <span className="text-xs bg-red-100 dark:bg-red-900/50 px-2 py-0.5 rounded-full">
+                                                        {isRtl ? `${graceMinutes} د متبقية` : `${graceMinutes}m left`}
+                                                    </span>
+                                                )}
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )
+                })()}
 
                 {/* Cancel Confirmation Dialog */}
                 <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
@@ -387,19 +425,20 @@ const DoctorBookingPage = () => {
                             </div>
 
                             {/* Map */}
-                            {(doctor?.latitude && doctor?.longitude) ? (
-                                <div className="rounded-xl overflow-hidden border shadow-sm">
-                                    <MapPicker
-                                        latitude={parseFloat(doctor.latitude)}
-                                        longitude={parseFloat(doctor.longitude)}
-                                        readonly={true}
-                                        isRtl={isRtl}
-                                    />
-                                </div>
+                            {doctor?.maps_link ? (
+                                <a
+                                    href={doctor.maps_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-2 p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors"
+                                >
+                                    <MapPin className="h-5 w-5" />
+                                    <span className="font-medium">{isRtl ? 'عرض الموقع على خرائط جوجل' : 'View Location on Google Maps'}</span>
+                                </a>
                             ) : (
-                                <div className="h-32 bg-muted/30 rounded-xl flex items-center justify-center text-muted-foreground text-sm border border-dashed">
+                                <div className="p-4 bg-muted/30 rounded-xl flex items-center justify-center text-muted-foreground text-sm border border-dashed">
                                     <MapPin className="h-5 w-5 me-2 opacity-50" />
-                                    {isRtl ? 'الموقع غير محدد على الخريطة' : 'Map location not set'}
+                                    {isRtl ? 'رابط الخريطة غير متوفر' : 'Map link not provided'}
                                 </div>
                             )}
                         </div>
@@ -453,45 +492,8 @@ const DoctorBookingPage = () => {
                     </div>
                 </div>
 
-                {/* ── Number of People ── */}
-                <div className="rounded-2xl border bg-card overflow-hidden">
-                    <div className="flex items-center gap-3 px-5 py-3.5 border-b bg-muted/30">
-                        <div className="h-8 w-8 rounded-lg bg-indigo-500/10 flex items-center justify-center">
-                            <Users className="h-4 w-4 text-indigo-500" />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-sm">{isRtl ? 'عدد الأشخاص' : 'Number of People'}</h3>
-                            <p className="text-xs text-muted-foreground">{isRtl ? 'كم شخص تريد الحجز لهم؟ (الحد الأقصى 5)' : 'How many people are you booking for? (Max 5)'}</p>
-                        </div>
-                    </div>
-                    <div className="p-5">
-                        <div className="flex items-center gap-4">
-                            <Label htmlFor="numberOfPeople" className="text-sm font-medium">
-                                {isRtl ? 'عدد الأشخاص:' : 'People:'}
-                            </Label>
-                            <select
-                                id="numberOfPeople"
-                                value={numberOfPeople}
-                                onChange={(e) => setNumberOfPeople(Number(e.target.value))}
-                                className="w-32 h-11 px-4 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                            >
-                                {[1, 2, 3, 4, 5].map(num => (
-                                    <option key={num} value={num}>
-                                        {num} {num === 1 ? (isRtl ? 'شخص' : 'person') : (isRtl ? 'أشخاص' : 'people')}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        {numberOfPeople > 1 && selectedSlot && selectedSlot.available_spots < numberOfPeople && (
-                            <p className="text-sm text-amber-600 mt-3 flex items-center gap-2 bg-amber-50 dark:bg-amber-950/30 p-3 rounded-xl">
-                                ⚠️ {isRtl
-                                    ? `الموعد المختار به ${selectedSlot.available_spots} أماكن فقط. سيتم توزيع الباقي على المواعيد التالية تلقائياً.`
-                                    : `Selected slot has only ${selectedSlot.available_spots} spots. Remaining will be auto-distributed to next slots.`
-                                }
-                            </p>
-                        )}
-                    </div>
-                </div>
+
+
 
                 {/* ── Available Slots ── */}
                 <div className="space-y-4">
@@ -527,57 +529,83 @@ const DoctorBookingPage = () => {
                             const isBlocked = dayData === 'BLOCKED'
 
                             return (
-                                <div key={dateKey} className={`rounded-2xl border overflow-hidden ${isBlocked ? 'border-red-200 dark:border-red-900' : 'bg-card'}`}>
-                                    <div className={`flex justify-between items-center px-5 py-3 border-b ${isBlocked ? 'bg-red-50 dark:bg-red-950/20' : 'bg-muted/30'}`}>
+                                <div key={dateKey} className={`rounded-2xl border overflow-hidden transition-all duration-300 ${isBlocked ? 'border-red-200 dark:border-red-900' : 'bg-card'}`}>
+                                    <div
+                                        className={`flex justify-between items-center px-5 py-3 border-b ${isBlocked ? 'bg-red-50 dark:bg-red-950/20' : 'bg-muted/30 hover:bg-muted/50 cursor-pointer'} transition-colors`}
+                                        onClick={() => !isBlocked && toggleDay(dateKey)}
+                                    >
                                         <h3 className="font-semibold text-sm">
                                             {format(new Date(dateKey), 'EEEE, d MMMM', { locale: isRtl ? ar : enUS })}
                                         </h3>
-                                        {isBlocked && (
-                                            <span className="px-3 py-1 rounded-full bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 text-xs font-bold border border-red-200 dark:border-red-800">
-                                                {isRtl ? 'الحجز متوقف' : 'Booking Stopped'}
-                                            </span>
-                                        )}
+                                        <div className="flex items-center gap-3">
+                                            {isBlocked ? (
+                                                <span className="px-3 py-1 rounded-full bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 text-xs font-bold border border-red-200 dark:border-red-800">
+                                                    {isRtl ? 'الحجز متوقف' : 'Booking Stopped'}
+                                                </span>
+                                            ) : (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="gap-2 h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                    onClick={(e) => { e.stopPropagation(); toggleDay(dateKey); }}
+                                                >
+                                                    {expandedDays[dateKey] ? (
+                                                        <>
+                                                            <span className="font-medium text-xs">{isRtl ? 'إخفاء' : 'Hide'}</span>
+                                                            <ChevronUp className="h-4 w-4" />
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span className="font-medium text-xs">{isRtl ? 'إظهار' : 'Show'}</span>
+                                                            <ChevronDown className="h-4 w-4" />
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="p-5">
-                                        {isBlocked ? (
-                                            <div className="text-center py-4 text-red-500 font-medium">
-                                                <p>{isRtl ? 'نعتذر، الحجز غير متاح لهذا اليوم' : 'Sorry, booking is stopped for this day'}</p>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-wrap gap-2">
-                                                {dayData.map((slot, idx) => {
-                                                    const isSelected = selectedSlot?.datetime === slot.datetime
-                                                    const isFull = slot.is_full
-                                                    return (
-                                                        <button
-                                                            key={idx}
-                                                            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+                                    {(isBlocked || expandedDays[dateKey]) && (
+                                        <div className="p-5 animate-in slide-in-from-top-2 fade-in duration-200">
+                                            {isBlocked ? (
+                                                <div className="text-center py-4 text-red-500 font-medium">
+                                                    <p>{isRtl ? 'نعتذر، الحجز غير متاح لهذا اليوم' : 'Sorry, booking is stopped for this day'}</p>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-wrap gap-2">
+                                                    {dayData.map((slot, idx) => {
+                                                        const isSelected = selectedSlot?.datetime === slot.datetime
+                                                        const isFull = slot.is_full
+                                                        return (
+                                                            <button
+                                                                key={idx}
+                                                                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
                                                                 ${isFull
-                                                                    ? 'bg-red-50 dark:bg-red-950/20 text-red-400 border border-red-200 dark:border-red-800 cursor-not-allowed opacity-60'
-                                                                    : isSelected
-                                                                        ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/20 scale-105'
-                                                                        : 'bg-muted/50 hover:bg-primary/10 border border-transparent hover:border-primary/30 hover:shadow-sm'
-                                                                }`}
-                                                            onClick={() => !isFull && setSelectedSlot(slot)}
-                                                            disabled={isFull}
-                                                        >
-                                                            <Clock className="h-3.5 w-3.5" />
-                                                            {format(parseISO(slot.datetime), 'h:mm a')}
-                                                            {isFull ? (
-                                                                <span className="text-xs font-bold text-red-500">
-                                                                    {isRtl ? 'مكتمل' : 'FULL'}
-                                                                </span>
-                                                            ) : slot.booked_people > 0 && (
-                                                                <span className="text-xs opacity-70">
-                                                                    ({slot.booked_people}/{slot.max_spots})
-                                                                </span>
-                                                            )}
-                                                        </button>
-                                                    )
-                                                })}
-                                            </div>
-                                        )}
-                                    </div>
+                                                                        ? 'bg-red-50 dark:bg-red-950/20 text-red-400 border border-red-200 dark:border-red-800 cursor-not-allowed opacity-60'
+                                                                        : isSelected
+                                                                            ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg shadow-blue-500/20 scale-105'
+                                                                            : 'bg-muted/50 hover:bg-primary/10 border border-transparent hover:border-primary/30 hover:shadow-sm'
+                                                                    }`}
+                                                                onClick={() => !isFull && setSelectedSlot(slot)}
+                                                                disabled={isFull}
+                                                            >
+                                                                <Clock className="h-3.5 w-3.5" />
+                                                                {format(parseISO(slot.datetime), 'h:mm a')}
+                                                                {isFull ? (
+                                                                    <span className="text-xs font-bold text-red-500">
+                                                                        {isRtl ? 'مكتمل' : 'FULL'}
+                                                                    </span>
+                                                                ) : slot.booked_people > 0 && (
+                                                                    <span className="text-xs opacity-70">
+                                                                        ({slot.booked_people}/{slot.max_spots})
+                                                                    </span>
+                                                                )}
+                                                            </button>
+                                                        )
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             )
                         })
@@ -588,8 +616,8 @@ const DoctorBookingPage = () => {
                 <div className="sticky bottom-4 bg-background/80 backdrop-blur-md p-4 rounded-2xl border shadow-xl">
                     <Button
                         className={`w-full h-13 text-base rounded-xl font-semibold transition-all duration-300 ${selectedSlot && !hasActiveBooking
-                                ? 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:opacity-90 text-white shadow-lg'
-                                : ''
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:opacity-90 text-white shadow-lg'
+                            : ''
                             }`}
                         disabled={!selectedSlot || bookMutation.isPending || hasActiveBooking}
                         onClick={() => bookMutation.mutate()}

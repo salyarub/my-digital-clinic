@@ -295,6 +295,40 @@ const NotificationsPage = () => {
         }
     }
 
+    const getNotificationTypeLabel = (type) => {
+        if (!type) return ''
+        if (isRtl) {
+            switch (type) {
+                case 'NEW_DOCTOR': return 'طبيب جديد'
+                case 'DOCUMENT_REUPLOAD': return 'إعادة رفع وثيقة'
+                case 'NEW_BOOKING': return 'حجز جديد'
+                case 'BOOKING_CREATED': return 'إنشاء حجز'
+                case 'BOOKING_CONFIRMED': return 'تأكيد الحجز'
+                case 'RESCHEDULE_OFFER': return 'تغيير موعد'
+                case 'REMINDER': return 'تذكير'
+                default: return type.replace(/_/g, ' ')
+            }
+        }
+        return type.replace(/_/g, ' ')
+    }
+
+    const getLocalizedMessage = (notif) => {
+        const msg = notif.message
+        if (!isRtl) return msg
+
+        if (notif.notification_type === 'NEW_DOCTOR' && msg.startsWith('New Doctor Registration: ')) {
+            const name = msg.replace('New Doctor Registration: ', '')
+            return `تسجيل طبيب جديد: ${name}`
+        }
+
+        if (notif.notification_type === 'DOCUMENT_REUPLOAD' && msg.startsWith('Document Re-upload: ')) {
+            const namePart = msg.replace('Document Re-upload: ', '').replace(' uploaded a new license document.', '')
+            return `قام ${namePart} برفع وثيقة طبية جديدة.`
+        }
+
+        return msg
+    }
+
     // Render action status or buttons
     const renderActionArea = (notif) => {
         const state = actionStates[notif.id]
@@ -305,7 +339,7 @@ const NotificationsPage = () => {
                 <div className="flex items-center gap-2 mt-3 pt-2 border-t border-border">
                     <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700 gap-1">
                         <CheckCircle className="w-3 h-3" />
-                        {isRtl ? 'تم القبول' : 'Accepted'}
+                        {isRtl ? 'مؤكد' : 'Confirmed'}
                     </Badge>
                 </div>
             )
@@ -350,7 +384,7 @@ const NotificationsPage = () => {
             if (notif.related_booking_status && notif.related_booking_status !== 'PENDING') {
                 // Booking already handled - show the current status
                 const statusConfig = {
-                    'CONFIRMED': { label: isRtl ? 'تم القبول' : 'Accepted', icon: CheckCircle, className: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700' },
+                    'CONFIRMED': { label: isRtl ? 'مؤكد' : 'Confirmed', icon: CheckCircle, className: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-300 dark:border-green-700' },
                     'CANCELLED': { label: isRtl ? 'تم الرفض' : 'Rejected', icon: X, className: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-300 dark:border-red-700' },
                     'IN_PROGRESS': { label: isRtl ? 'جاري الفحص' : 'In Progress', icon: Clock, className: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-purple-300 dark:border-purple-700' },
                     'COMPLETED': { label: isRtl ? 'مكتمل' : 'Completed', icon: CheckCircle, className: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-300 dark:border-blue-700' },
@@ -477,14 +511,14 @@ const NotificationsPage = () => {
                                             <div className="flex-1">
                                                 <div className="flex items-center justify-between">
                                                     <span className={`text-xs px-2 py-0.5 rounded-full ${!notif.is_read ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                                                        {notif.notification_type?.replace(/_/g, ' ')}
+                                                        {getNotificationTypeLabel(notif.notification_type)}
                                                     </span>
                                                     <span className="text-xs text-muted-foreground" title={format(new Date(notif.created_at), 'yyyy-MM-dd HH:mm:ss')}>
                                                         {formatNotificationDate(notif.created_at)}
                                                     </span>
                                                 </div>
                                                 <p className={`text-sm mt-2 ${!notif.is_read ? 'font-medium' : 'text-muted-foreground'}`}>
-                                                    {notif.message}
+                                                    {getLocalizedMessage(notif)}
                                                 </p>
 
                                                 {/* Action Buttons or Status */}

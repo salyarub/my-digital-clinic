@@ -27,3 +27,7 @@ class PatientNotification(BaseNotification):
 class SecretaryNotification(BaseNotification):
     recipient = models.ForeignKey(Secretary, on_delete=models.CASCADE, related_name='notifications')
     notification_type = models.CharField(max_length=50)
+
+class AdminNotification(BaseNotification):
+    # Admins don't have a specific recipient profile, we can alert all users with `role='ADMIN'`
+    notification_type = models.CharField(max_length=50)
