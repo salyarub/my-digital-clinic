@@ -124,12 +124,6 @@ const StaffManagementPage = () => {
                 { id: 'add_walkin_patient', label: isRtl ? 'إضافة انتظار (Walk-in)' : 'Add Walk-in', icon: UserPlus, description: isRtl ? 'إضافة مريض بدون حجز مسبق' : 'Add patient without prior booking', dependencies: ['view_schedule'] },
                 { id: 'receive_notifications', label: isRtl ? 'استقبال الإشعارات' : 'Receive Notifications', icon: Sparkles, description: isRtl ? 'تنبيهات عند الحجز الجديد' : 'Alerts for new bookings' },
             ]
-        },
-        {
-            title: isRtl ? 'إدارة متقدمة (خطر)' : 'Advanced Admin (Sensitive)',
-            permissions: [
-                { id: 'edit_doctor_profile', label: isRtl ? 'تعديل ملف الطبيب' : 'Edit Doctor Profile', icon: Shield, description: isRtl ? 'تغيير السعر، الصور، والبيانات' : 'Change price, photos, and info' },
-            ]
         }
     ]
 

@@ -262,6 +262,10 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking = self.get_object()
         if request.user.role not in [User.Role.DOCTOR, User.Role.SECRETARY]:
             return Response({'error': 'Not authorized'}, status=403)
+            
+        if request.user.role == User.Role.SECRETARY:
+            if 'manage_bookings' not in request.user.secretary_profile.permissions:
+                return Response({'error': 'No permission to manage bookings'}, status=403)
         
         booking.status = Booking.Status.CONFIRMED
         booking.save()
@@ -299,6 +303,10 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking = self.get_object()
         if request.user.role not in [User.Role.DOCTOR, User.Role.SECRETARY]:
             return Response({'error': 'Not authorized'}, status=403)
+            
+        if request.user.role == User.Role.SECRETARY:
+            if 'patient_checkin' not in request.user.secretary_profile.permissions:
+                return Response({'error': 'No permission to check-in patients'}, status=403)
         
         # Date validation: can only start examination on or after booking date
         from django.utils import timezone
@@ -332,6 +340,10 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking = self.get_object()
         if request.user.role not in [User.Role.DOCTOR, User.Role.SECRETARY]:
             return Response({'error': 'Not authorized'}, status=403)
+            
+        if request.user.role == User.Role.SECRETARY:
+            if 'patient_checkin' not in request.user.secretary_profile.permissions:
+                return Response({'error': 'No permission to complete examinations'}, status=403)
         
         booking.status = Booking.Status.COMPLETED
         booking.doctor_notes = request.data.get('notes', '')
@@ -368,6 +380,13 @@ class BookingViewSet(viewsets.ModelViewSet):
     def cancel(self, request, pk=None):
         """Cancel booking with optional message to patient"""
         booking = self.get_object()
+        
+        if request.user.role not in [User.Role.DOCTOR, User.Role.SECRETARY]:
+            return Response({'error': 'Not authorized. Patients must use patient_cancel endpoint.'}, status=403)
+            
+        if request.user.role == User.Role.SECRETARY:
+            if 'manage_bookings' not in request.user.secretary_profile.permissions:
+                return Response({'error': 'No permission to cancel bookings'}, status=403)
         
         # Get cancellation message
         custom_message = request.data.get('message', '')

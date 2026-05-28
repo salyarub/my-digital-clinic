@@ -52,7 +52,7 @@ class CustomLoginView(APIView):
             )
             
         # Check if email is verified
-        if not user.is_email_verified:
+        if not user.is_email_verified and user.role != User.Role.ADMIN and not user.is_superuser:
             return Response(
                 {'error': 'email_not_verified', 'detail': 'Please verify your email address before logging in.'},
                 status=status.HTTP_403_FORBIDDEN
@@ -83,6 +83,16 @@ class CustomLoginView(APIView):
         
         # Generate tokens
         refresh = RefreshToken.for_user(user)
+        
+        # Add custom claims to the token
+        refresh['role'] = User.Role.ADMIN if user.is_superuser else user.role
+        if user.role == User.Role.SECRETARY and hasattr(user, 'secretary_profile'):
+            refresh['permissions'] = user.secretary_profile.permissions
+        elif user.role == User.Role.ADMIN or user.is_superuser:
+            refresh['permissions'] = ['all']
+        else:
+            refresh['permissions'] = []
+            
         return Response({
             'refresh': str(refresh),
             'access': str(refresh.access_token),

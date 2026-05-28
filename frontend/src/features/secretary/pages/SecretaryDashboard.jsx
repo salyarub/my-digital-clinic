@@ -138,11 +138,10 @@ const SecretaryDashboard = () => {
         refetchInterval: 5000,
     })
 
-    // Fetch doctor profile for editing
+    // Fetch doctor profile for capacity checks
     const { data: doctorProfile } = useQuery({
         queryKey: ['doctorProfile'],
-        queryFn: async () => (await api.get('doctors/profile/')).data,
-        enabled: hasPermission('edit_doctor_profile')
+        queryFn: async () => (await api.get('doctors/profile/')).data
     })
 
     // Confirm booking
@@ -241,10 +240,13 @@ const SecretaryDashboard = () => {
         walkinMutation.mutate(walkinData)
     }
 
-    const pendingBookings = bookings?.filter(b => b.status === 'PENDING') || []
-    const confirmedBookings = bookings?.filter(b => b.status === 'CONFIRMED') || []
-    const inProgressBookings = bookings?.filter(b => b.status === 'IN_PROGRESS') || []
-    const completedBookings = bookings?.filter(b => b.status === 'COMPLETED') || []
+    const todayStr = format(new Date(), 'yyyy-MM-dd')
+    const todayBookings = bookings?.filter(b => b.booking_datetime?.startsWith(todayStr)) || []
+    
+    const pendingBookings = todayBookings.filter(b => b.status === 'PENDING')
+    const confirmedBookings = todayBookings.filter(b => b.status === 'CONFIRMED')
+    const inProgressBookings = todayBookings.filter(b => b.status === 'IN_PROGRESS')
+    const completedBookings = todayBookings.filter(b => b.status === 'COMPLETED')
 
     const getBookingTypeBadge = (type) => {
         if (type === 'FOLLOWUP') {
@@ -377,12 +379,7 @@ const SecretaryDashboard = () => {
                                     {isRtl ? 'تسجيل دخول المرضى' : 'Patient Check-in'}
                                 </Badge>
                             )}
-                            {hasPermission('edit_doctor_profile') && (
-                                <Badge className="bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-400 gap-1">
-                                    <UserCog className="h-3 w-3" />
-                                    {isRtl ? 'تعديل ملف الدكتور' : 'Edit Doctor Profile'}
-                                </Badge>
-                            )}
+
                             {hasPermission('add_walkin_patient') && (
                                 <Badge className="bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-400 gap-1">
                                     <Users className="h-3 w-3" />
@@ -521,23 +518,7 @@ const SecretaryDashboard = () => {
                     </Card>
                 )}
 
-                {/* Edit Doctor Profile - only if has permission */}
-                {hasPermission('edit_doctor_profile') && (
-                    <Card className="border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/50 dark:bg-indigo-950/20">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-indigo-800 dark:text-indigo-400">
-                                <UserCog className="h-5 w-5" />{isRtl ? 'تعديل ملف الدكتور' : 'Edit Doctor Profile'}
-                            </CardTitle>
-                            <CardDescription>{isRtl ? 'يمكنك تحديث معلومات الطبيب' : 'You can update doctor information'}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Button className="gap-2" onClick={() => window.location.href = '/profile'}>
-                                <Settings className="h-4 w-4" />
-                                {isRtl ? 'الذهاب لصفحة الملف الشخصي' : 'Go to Profile Page'}
-                            </Button>
-                        </CardContent>
-                    </Card>
-                )}
+
 
                 {bookingsLoading && (
                     <div className="flex justify-center py-12">
