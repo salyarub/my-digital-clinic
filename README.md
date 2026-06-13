@@ -147,7 +147,7 @@ npm run dev
 
 **يمكنك الحصول على انشاء مفتاح من خلال :**
 
-https://myaccount.google.com/apppasswords ****
+https://myaccount.google.com/apppasswords 
 
 يجب تفعيل المصادقة الثنائية قبل ذلك في ايميلك 
 
